@@ -130,7 +130,7 @@
       padding: 4px 6px;
       font-family: inherit;
       font-size: 1.3rem;
-      width: 100px;
+      width: 120px;
       color: #9b59b6;
       text-align: left;
       outline: none;
@@ -226,7 +226,7 @@
         font-size: 1rem;
       }
       #contentIdInput {
-        width: 80px;
+        width: 100px;
         font-size: 1.1rem;
       }
       .btn {
@@ -273,7 +273,43 @@
 
 <script>
   (function() {
-    // ----- 博客数据 (666 使用纯文本，由 renderPost 特殊处理) -----
+    // ----- 辅助函数：获取当前系统时间 -----
+    function getNow() {
+      return new Date();
+    }
+
+    // ----- 判断是否为8月11日 (月=7, 日=11, 因为getMonth()从0开始) -----
+    function isAugust11(date) {
+      return date.getMonth() === 7 && date.getDate() === 11;
+    }
+
+    // ----- 判断是否早于2008年8月11日 -----
+    function isBefore20080811(date) {
+      const target = new Date(2008, 7, 11); // 2008-08-11
+      return date.getTime() < target.getTime();
+    }
+
+    // ----- 生成 20080811 的动态内容 -----
+    function get20080811Content() {
+      const now = getNow();
+      
+      // 早于 2008-08-11
+      if (isBefore20080811(now)) {
+        return '...';
+      }
+      
+      // 是8月11日 (且年份 >= 2008)
+      if (isAugust11(now)) {
+        const year = now.getFullYear();
+        const age = year - 2008;
+        return `This is someone's ${age}th birthday.`;
+      }
+      
+      // 不是8月11日，且 >= 2008-08-11
+      return '...';
+    }
+
+    // ----- 博客数据 -----
     const posts = {
       '0': {
         id: '0',
@@ -314,7 +350,7 @@
       '666': {
         id: '666',
         body: `Please retry.`,
-        isRed: true  // 标记为红色
+        isRed: true
       },
       '10': {
         id: '10',
@@ -323,6 +359,36 @@
       'e': {
         id: 'e',
         body: `$$\\frac{1}{0!} + \\frac{1}{1!} + \\frac{1}{2!} + \\cdots$$\n$$\\approx$$\n$$2.7182818284590452353602874713526624977572470936999595749669676277240766303535475945713821785251664274$$`
+      },
+      '20150915': {
+        id: '20150915',
+        body: `... was when we witnessed the release of a really nice game.`
+      },
+      '20080811': {
+        id: '20080811',
+        body: get20080811Content(),  // 动态内容
+        isDynamic: true
+      },
+      '19980829': {
+        id: '19980829',
+        body: '',  // 空内容，不显示文字
+        isEmpty: true
+      },
+      '1225': {
+        id: '1225',
+        body: `Don't forget.`
+      },
+      'Klartsharr': {
+        id: 'Klartsharr',
+        body: `Oh, where did you get that name?`
+      },
+      'klartsharr': {
+        id: 'klartsharr',
+        body: `Spell it into a Name, would you?`
+      },
+      'KLARTSHARR': {
+        id: 'KLARTSHARR',
+        body: `STOP.`
       }
     };
 
@@ -332,10 +398,24 @@
     const randomBtn = document.getElementById('randomBtn');
     const titleEl = document.getElementById('pageTitle');
 
-    function renderPost(post) {
+    // 保存当前加载的编号，用于刷新时重新计算（20080811动态内容）
+    let currentId = '';
+
+    function renderPost(post, id) {
       if (!post) return null;
-      
-      let bodyHtml = post.body
+
+      // 如果是 19980829，内容为空
+      if (post.isEmpty) {
+        return '';
+      }
+
+      // 如果是动态内容（20080811），重新获取最新内容
+      let bodyText = post.body;
+      if (post.isDynamic) {
+        bodyText = get20080811Content();
+      }
+
+      let bodyHtml = bodyText
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -350,40 +430,74 @@
       return `<div class="post-body">${bodyHtml}</div>`;
     }
 
-    function clearInputAndDisplay() {
-      inputEl.value = '';
+    function clearDisplay() {
       displayEl.innerHTML = '';
-      titleEl.textContent = '';
     }
 
     function loadContentById(id) {
       const raw = String(id);
       if (raw === '') {
-        clearInputAndDisplay();
+        inputEl.value = '';
+        displayEl.innerHTML = '';
+        titleEl.textContent = '';
+        currentId = '';
         return;
       }
 
       const found = posts.hasOwnProperty(raw) ? posts[raw] : null;
       if (found) {
+        currentId = raw;
         titleEl.textContent = raw;
-        const html = renderPost(found);
-        if (html) {
+        
+        // 19980829 特殊处理：清空内容，标题改为19980829，输入框保留
+        if (found.isEmpty) {
+          displayEl.innerHTML = '';
+          // 标题已经在上面设置了
+          return;
+        }
+
+        const html = renderPost(found, raw);
+        if (html !== null && html !== '') {
           displayEl.innerHTML = html;
           if (window.MathJax && MathJax.typesetPromise) {
             MathJax.typesetPromise().catch(function(err) {});
           }
         } else {
-          clearInputAndDisplay();
+          displayEl.innerHTML = '';
         }
       } else {
-        clearInputAndDisplay();
+        // 编号不存在：清除输入框 + 清除显示内容
+        inputEl.value = '';
+        displayEl.innerHTML = '';
+        titleEl.textContent = '';
+        currentId = '';
+      }
+    }
+
+    // 用于刷新页面时重新计算动态内容（20080811）
+    function refreshCurrentContent() {
+      if (currentId && posts.hasOwnProperty(currentId)) {
+        const post = posts[currentId];
+        if (post.isDynamic) {
+          // 重新渲染动态内容
+          const html = renderPost(post, currentId);
+          if (html !== null && html !== '') {
+            displayEl.innerHTML = html;
+            if (window.MathJax && MathJax.typesetPromise) {
+              MathJax.typesetPromise().catch(function(err) {});
+            }
+          }
+        }
       }
     }
 
     function loadRandom() {
       const keys = Object.keys(posts);
       if (keys.length === 0) {
-        clearInputAndDisplay();
+        inputEl.value = '';
+        displayEl.innerHTML = '';
+        titleEl.textContent = '';
+        currentId = '';
         return;
       }
       const randomKey = keys[Math.floor(Math.random() * keys.length)];
@@ -395,12 +509,16 @@
       displayEl.innerHTML = '';
       inputEl.value = '';
       titleEl.textContent = '';
+      currentId = '';
 
       loadBtn.addEventListener('click', function(e) {
         const val = inputEl.value;
         const trimmed = val.trim();
         if (trimmed === '') {
-          clearInputAndDisplay();
+          inputEl.value = '';
+          displayEl.innerHTML = '';
+          titleEl.textContent = '';
+          currentId = '';
           return;
         }
         loadContentById(val);
@@ -416,7 +534,10 @@
           const val = inputEl.value;
           const trimmed = val.trim();
           if (trimmed === '') {
-            clearInputAndDisplay();
+            inputEl.value = '';
+            displayEl.innerHTML = '';
+            titleEl.textContent = '';
+            currentId = '';
             return;
           }
           loadContentById(val);
@@ -426,6 +547,18 @@
       inputEl.addEventListener('focus', function() {
         this.select();
       });
+
+      // 页面可见性变化时刷新动态内容（如从后台切回）
+      document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+          refreshCurrentContent();
+        }
+      });
+
+      // 每分钟刷新一次动态内容（应对跨分钟边界）
+      setInterval(function() {
+        refreshCurrentContent();
+      }, 60000);
     }
 
     init();

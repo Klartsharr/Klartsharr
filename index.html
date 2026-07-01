@@ -20,7 +20,6 @@
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
   </script>
   <style>
-    /* 彻底黑白背景，只有紫色字和紫色光标 */
     * {
       margin: 0;
       padding: 0;
@@ -52,7 +51,6 @@
       text-shadow: none;
     }
 
-    /* MathJax SVG 输出的颜色覆盖为紫色 */
     .MathJax_SVG, .MathJax {
       color: #9b59b6 !important;
       fill: #9b59b6 !important;
@@ -70,12 +68,11 @@
       color: #9b59b6 !important;
     }
 
-    /* 红色字体专门用于 666 */
+    /* 红色字体用于 666 */
     .red-text {
       color: #ff0000 !important;
     }
 
-    /* 去除网站标题区域 */
     .cmd-header {
       display: none;
     }
@@ -254,7 +251,6 @@
 </head>
 <body>
 <div class="terminal">
-  <!-- 头部已移除 (display: none) -->
 
   <div class="input-area">
     <div class="prompt-line">
@@ -277,7 +273,7 @@
 
 <script>
   (function() {
-    // ----- 博客数据 (严格按照给定内容) -----
+    // ----- 博客数据 (666 使用纯文本，由 renderPost 特殊处理) -----
     const posts = {
       '0': {
         id: '0',
@@ -301,11 +297,11 @@
       },
       '9': {
         id: '9',
-        body: `在这里插入贝多芬第九交响曲的wiki简介.`
+        body: `Ludwig van Beethoven's Symphony No. 9 in D minor, Op. 125, is a choral symphony, the final complete symphony by Beethoven, composed between 1822 and 1824. It was first performed in Vienna on 7 May 1824. The symphony is regarded by many critics and musicologists as Beethoven's greatest work and one of the supreme achievements in the history of music. One of the best-known works in common practice music, it stands as one of the most frequently performed symphonies in the world. The symphony was the first example of a major composer using voices in a symphony. The text is adapted from Friedrich Schiller's poem "Ode to Joy".`
       },
       '18': {
         id: '18',
-        body: `在这里插入莎士比亚第14行诗第18首.`
+        body: `Shall I compare thee to a summer's day?\nThou art more lovely and more temperate:\nRough winds do shake the darling buds of May,\nAnd summer's lease hath all too short a date;\nSometime too hot the eye of heaven shines,\nAnd often is his gold complexion dimm'd;\nAnd every fair from fair sometime declines,\nBy chance or nature's changing course untrimm'd;\nBut thy eternal summer shall not fade,\nNor lose possession of that fair thou ow'st;\nNor shall death brag thou wander'st in his shade,\nWhen in eternal lines to time thou grow'st:\nSo long as men can breathe or eyes can see,\nSo long lives this, and this gives life to thee.`
       },
       'i': {
         id: 'i',
@@ -317,7 +313,8 @@
       },
       '666': {
         id: '666',
-        body: `<span class="red-text">Please retry.</span>`
+        body: `Please retry.`,
+        isRed: true  // 标记为红色
       },
       '10': {
         id: '10',
@@ -337,12 +334,18 @@
 
     function renderPost(post) {
       if (!post) return null;
-      const bodyHtml = post.body
+      
+      let bodyHtml = post.body
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/\n/g, '<br>')
         .replace(/  /g, '&nbsp;&nbsp;');
+
+      // 如果是 666，用红色 span 包裹
+      if (post.isRed) {
+        bodyHtml = `<span class="red-text">${bodyHtml}</span>`;
+      }
 
       return `<div class="post-body">${bodyHtml}</div>`;
     }
@@ -350,7 +353,6 @@
     function clearInputAndDisplay() {
       inputEl.value = '';
       displayEl.innerHTML = '';
-      // 清空时标题为空白
       titleEl.textContent = '';
     }
 
@@ -363,7 +365,6 @@
 
       const found = posts.hasOwnProperty(raw) ? posts[raw] : null;
       if (found) {
-        // 更新网站标题为编号或字符串
         titleEl.textContent = raw;
         const html = renderPost(found);
         if (html) {

@@ -3,7 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>紫晶终端 · 编号博客</title>
+  <title id="pageTitle"></title>
+  <!-- MathJax 配置与加载 -->
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+  </script>
   <style>
     /* 彻底黑白背景，只有紫色字和紫色光标 */
     * {
@@ -37,38 +52,34 @@
       text-shadow: none;
     }
 
-    /* 头部 — 仅保留结构，无默认文字 */
+    /* MathJax SVG 输出的颜色覆盖为紫色 */
+    .MathJax_SVG, .MathJax {
+      color: #9b59b6 !important;
+      fill: #9b59b6 !important;
+    }
+    .MathJax_SVG * {
+      color: #9b59b6 !important;
+      fill: #9b59b6 !important;
+    }
+    .MathJax_SVG g path, .MathJax_SVG g rect, .MathJax_SVG g use {
+      stroke: #9b59b6 !important;
+      fill: #9b59b6 !important;
+    }
+    .MathJax_SVG mtext, .MathJax_SVG mi, .MathJax_SVG mn, .MathJax_SVG mo {
+      fill: #9b59b6 !important;
+      color: #9b59b6 !important;
+    }
+
+    /* 红色字体专门用于 666 */
+    .red-text {
+      color: #ff0000 !important;
+    }
+
+    /* 去除网站标题区域 */
     .cmd-header {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: baseline;
-      border: none;
-      padding-bottom: 8px;
-      margin-bottom: 20px;
-      font-size: 1.2rem;
-      border-bottom: none;
+      display: none;
     }
 
-    .cmd-header .brand {
-      font-size: 1.6rem;
-      font-weight: bold;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      background: transparent;
-      color: #9b59b6;
-      padding: 0;
-      box-shadow: none;
-    }
-
-    .cmd-header .version {
-      font-size: 0.95rem;
-      opacity: 0.5;
-      border: none;
-      padding: 0;
-    }
-
-    /* 输入区 */
     .input-area {
       background: transparent;
       border: none;
@@ -181,7 +192,6 @@
       margin-top: 4px;
     }
 
-    /* 移除标题相关样式，只保留正文 */
     .post-body {
       font-size: 1.15rem;
       line-height: 1.7;
@@ -197,7 +207,6 @@
       margin-bottom: 0.6rem;
     }
 
-    /* 错误信息 — 完全移除，静默处理 */
     .error-message {
       display: none;
     }
@@ -215,9 +224,6 @@
     @media (max-width: 560px) {
       .terminal {
         padding: 16px 12px;
-      }
-      .cmd-header .brand {
-        font-size: 1.4rem;
       }
       .prompt-line {
         font-size: 1rem;
@@ -248,13 +254,8 @@
 </head>
 <body>
 <div class="terminal">
-  <!-- 头部：无默认文字 -->
-  <div class="cmd-header">
-    <span class="brand"></span>
-    <span class="version"></span>
-  </div>
+  <!-- 头部已移除 (display: none) -->
 
-  <!-- 输入区：无默认文字 -->
   <div class="input-area">
     <div class="prompt-line">
       <span class="prompt-symbol"></span>
@@ -268,9 +269,7 @@
     </div>
   </div>
 
-  <!-- 内容展示 -->
   <div class="content-display" id="contentDisplay">
-    <!-- 由JS渲染 -->
   </div>
 
   <div class="footer-note"></div>
@@ -278,8 +277,7 @@
 
 <script>
   (function() {
-    // ----- 博客数据 (无标题，仅内容) -----
-    // 编号区分大小写: '0', '1', '01', '001' 都是不同的键
+    // ----- 博客数据 (严格按照给定内容) -----
     const posts = {
       '0': {
         id: '0',
@@ -288,14 +286,6 @@
       '1': {
         id: '1',
         body: `This marks the beginning of calculations.`
-      },
-      '01': {
-        id: '01',
-        body: `The first two digits. A binary beginning.`
-      },
-      '001': {
-        id: '001',
-        body: `A deeper zero. A more precise origin.`
       },
       '2': {
         id: '2',
@@ -311,11 +301,31 @@
       },
       '9': {
         id: '9',
-        body: `The Symphony No. 9 in D minor, Op. 125, is a choral symphony, the final complete symphony by Ludwig van Beethoven, composed between 1822 and 1824. It was first performed in Vienna on 7 May 1824. The symphony is regarded by many critics and musicologists as Beethoven's greatest work and one of the supreme achievements in the history of music. One of the best-known works in common practice music, it stands as one of the most frequently performed symphonies in the world.`
+        body: `在这里插入贝多芬第九交响曲的wiki简介.`
       },
       '18': {
         id: '18',
-        body: `Shall I compare thee to a summer's day?\nThou art more lovely and more temperate:\nRough winds do shake the darling buds of May,\nAnd summer's lease hath all too short a date;\nSometime too hot the eye of heaven shines,\nAnd often is his gold complexion dimm'd;\nAnd every fair from fair sometime declines,\nBy chance or nature's changing course untrimm'd;\nBut thy eternal summer shall not fade,\nNor lose possession of that fair thou ow'st;\nNor shall death brag thou wander'st in his shade,\nWhen in eternal lines to time thou grow'st:\nSo long as men can breathe or eyes can see,\nSo long lives this, and this gives life to thee.`
+        body: `在这里插入莎士比亚第14行诗第18首.`
+      },
+      'i': {
+        id: 'i',
+        body: `The ninth Latin alphabet.\n... I choose not to make this one a maths reference. Otherwise what about j and k?`
+      },
+      'I': {
+        id: 'I',
+        body: `Chances are you are an egotist.`
+      },
+      '666': {
+        id: '666',
+        body: `<span class="red-text">Please retry.</span>`
+      },
+      '10': {
+        id: '10',
+        body: `We have reached the number of fingers that a common human has.\nHard to say whether good or not that is.`
+      },
+      'e': {
+        id: 'e',
+        body: `$$\\frac{1}{0!} + \\frac{1}{1!} + \\frac{1}{2!} + \\cdots$$\n$$\\approx$$\n$$2.7182818284590452353602874713526624977572470936999595749669676277240766303535475945713821785251664274$$`
       }
     };
 
@@ -323,8 +333,8 @@
     const inputEl = document.getElementById('contentIdInput');
     const loadBtn = document.getElementById('loadBtn');
     const randomBtn = document.getElementById('randomBtn');
+    const titleEl = document.getElementById('pageTitle');
 
-    // 渲染文章 (无标题)
     function renderPost(post) {
       if (!post) return null;
       const bodyHtml = post.body
@@ -334,43 +344,41 @@
         .replace(/\n/g, '<br>')
         .replace(/  /g, '&nbsp;&nbsp;');
 
-      return `
-        <div class="post-body">${bodyHtml}</div>
-      `;
+      return `<div class="post-body">${bodyHtml}</div>`;
     }
 
-    // 静默清除输入框，不显示任何错误
     function clearInputAndDisplay() {
       inputEl.value = '';
       displayEl.innerHTML = '';
+      // 清空时标题为空白
+      titleEl.textContent = '';
     }
 
     function loadContentById(id) {
-      // 保留原始输入，区分大小写
       const raw = String(id);
-      // 如果输入为空，清除显示
       if (raw === '') {
         clearInputAndDisplay();
         return;
       }
 
-      // 精确查找（区分大小写）
       const found = posts.hasOwnProperty(raw) ? posts[raw] : null;
       if (found) {
+        // 更新网站标题为编号或字符串
+        titleEl.textContent = raw;
         const html = renderPost(found);
         if (html) {
           displayEl.innerHTML = html;
+          if (window.MathJax && MathJax.typesetPromise) {
+            MathJax.typesetPromise().catch(function(err) {});
+          }
         } else {
-          // 渲染失败也清除
           clearInputAndDisplay();
         }
       } else {
-        // 编号不存在：清除输入框 + 清除显示内容
         clearInputAndDisplay();
       }
     }
 
-    // 随机加载：从所有键中随机选一个
     function loadRandom() {
       const keys = Object.keys(posts);
       if (keys.length === 0) {
@@ -383,19 +391,17 @@
     }
 
     function init() {
-      // 初始无内容
       displayEl.innerHTML = '';
       inputEl.value = '';
+      titleEl.textContent = '';
 
       loadBtn.addEventListener('click', function(e) {
         const val = inputEl.value;
-        // 保留原始值，不去除空格（但去除首尾空格以符合直觉）
         const trimmed = val.trim();
         if (trimmed === '') {
           clearInputAndDisplay();
           return;
         }
-        // 使用原始输入值（保留大小写）
         loadContentById(val);
       });
 

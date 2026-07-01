@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>紫晶终端 · 编号博客</title>
+  <style>
+    /* 彻底黑白背景，只有紫色字和紫色光标 */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000000;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Courier New', Courier, 'Nouveau IBM', 'VT323', monospace;
+      padding: 16px;
+      font-family: 'SF Mono', 'Menlo', 'Monaco', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+    }
+
+    .terminal {
+      max-width: 820px;
+      width: 100%;
+      background: #000000;
+      padding: 24px 20px 28px;
+    }
+
+    .terminal, .terminal * {
+      color: #9b59b6;
+      font-weight: 400;
+      letter-spacing: 0.3px;
+      text-shadow: none;
+    }
+
+    /* 头部 — 仅保留结构，无默认文字 */
+    .cmd-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: baseline;
+      border: none;
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+      font-size: 1.2rem;
+      border-bottom: none;
+    }
+
+    .cmd-header .brand {
+      font-size: 1.6rem;
+      font-weight: bold;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      background: transparent;
+      color: #9b59b6;
+      padding: 0;
+      box-shadow: none;
+    }
+
+    .cmd-header .version {
+      font-size: 0.95rem;
+      opacity: 0.5;
+      border: none;
+      padding: 0;
+    }
+
+    /* 输入区 */
+    .input-area {
+      background: transparent;
+      border: none;
+      padding: 12px 0 16px 0;
+      box-shadow: none;
+      margin-bottom: 16px;
+    }
+
+    .prompt-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 10px;
+      font-size: 1.3rem;
+      border: none;
+    }
+
+    .prompt-symbol {
+      font-weight: bold;
+      color: #9b59b6;
+      background: transparent;
+      padding: 0;
+      border: none;
+    }
+
+    .prompt-text {
+      opacity: 0.7;
+      font-size: 1.1rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 8px;
+      gap: 8px 10px;
+      border: none;
+      padding-top: 8px;
+    }
+
+    .input-group label {
+      font-size: 1.1rem;
+      background: transparent;
+      padding: 0 4px 0 0;
+      border: none;
+    }
+
+    #contentIdInput {
+      background: transparent;
+      border: none;
+      padding: 4px 6px;
+      font-family: inherit;
+      font-size: 1.3rem;
+      width: 100px;
+      color: #9b59b6;
+      text-align: left;
+      outline: none;
+      box-shadow: none;
+      caret-color: #9b59b6;
+      border-bottom: 1px dotted #9b59b6;
+      border-radius: 0;
+      letter-spacing: 0.5px;
+      transition: border-color 0.1s;
+    }
+
+    #contentIdInput:focus {
+      border-bottom: 1px solid #9b59b6;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .btn {
+      background: transparent;
+      border: none;
+      color: #9b59b6;
+      font-family: inherit;
+      font-size: 1.2rem;
+      font-weight: normal;
+      padding: 2px 8px;
+      cursor: pointer;
+      box-shadow: none;
+      transition: opacity 0.1s, transform 0.05s;
+      text-transform: none;
+      letter-spacing: 0.3px;
+      opacity: 0.7;
+      border: none;
+      outline: none;
+      text-decoration: underline 1px dotted #9b59b6;
+      text-underline-offset: 3px;
+    }
+
+    .btn:hover {
+      opacity: 1;
+      background: transparent;
+      text-decoration: underline 1px solid #9b59b6;
+      transform: none;
+    }
+
+    .btn:active {
+      opacity: 0.5;
+      transform: none;
+    }
+
+    .content-display {
+      background: transparent;
+      border: none;
+      padding: 14px 0 10px 0;
+      min-height: 160px;
+      box-shadow: none;
+      margin-top: 4px;
+    }
+
+    /* 移除标题相关样式，只保留正文 */
+    .post-body {
+      font-size: 1.15rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: transparent;
+      padding: 4px 0;
+      border: none;
+      min-height: 60px;
+    }
+
+    .post-body p {
+      margin-bottom: 0.6rem;
+    }
+
+    /* 错误信息 — 完全移除，静默处理 */
+    .error-message {
+      display: none;
+    }
+
+    .footer-note {
+      margin-top: 20px;
+      text-align: right;
+      font-size: 0.85rem;
+      opacity: 0.3;
+      border: none;
+      padding-top: 12px;
+      letter-spacing: 0.3px;
+    }
+
+    @media (max-width: 560px) {
+      .terminal {
+        padding: 16px 12px;
+      }
+      .cmd-header .brand {
+        font-size: 1.4rem;
+      }
+      .prompt-line {
+        font-size: 1rem;
+      }
+      #contentIdInput {
+        width: 80px;
+        font-size: 1.1rem;
+      }
+      .btn {
+        font-size: 1rem;
+        padding: 2px 6px;
+      }
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+      background: #000;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #9b59b6;
+      border-radius: 0;
+    }
+    ::-webkit-scrollbar-track {
+      background: #000;
+    }
+  </style>
+</head>
+<body>
+<div class="terminal">
+  <!-- 头部：无默认文字 -->
+  <div class="cmd-header">
+    <span class="brand"></span>
+    <span class="version"></span>
+  </div>
+
+  <!-- 输入区：无默认文字 -->
+  <div class="input-area">
+    <div class="prompt-line">
+      <span class="prompt-symbol"></span>
+      <span class="prompt-text"></span>
+    </div>
+    <div class="input-group">
+      <label for="contentIdInput"></label>
+      <input type="text" id="contentIdInput" placeholder="" value="" maxlength="20" spellcheck="false">
+      <button class="btn" id="loadBtn"></button>
+      <button class="btn" id="randomBtn"></button>
+    </div>
+  </div>
+
+  <!-- 内容展示 -->
+  <div class="content-display" id="contentDisplay">
+    <!-- 由JS渲染 -->
+  </div>
+
+  <div class="footer-note"></div>
+</div>
+
+<script>
+  (function() {
+    // ----- 博客数据 (无标题，仅内容) -----
+    // 编号区分大小写: '0', '1', '01', '001' 都是不同的键
+    const posts = {
+      '0': {
+        id: '0',
+        body: `The origin.\nSome say it's trivial; some say it's bizarre. In whichever way, we must proceed.`
+      },
+      '1': {
+        id: '1',
+        body: `This marks the beginning of calculations.`
+      },
+      '01': {
+        id: '01',
+        body: `The first two digits. A binary beginning.`
+      },
+      '001': {
+        id: '001',
+        body: `A deeper zero. A more precise origin.`
+      },
+      '2': {
+        id: '2',
+        body: `This is the number of hands that a common human has.\nOnce we have moved from 1 to 2, it's quite easy to get other following results.`
+      },
+      '-1': {
+        id: '-1',
+        body: `The other way.`
+      },
+      'pi': {
+        id: 'pi',
+        body: `In a circle and its diameter, in series of integer powers, in elastic collisions, in trigonometry, ...\n... it's everywhere.`
+      },
+      '9': {
+        id: '9',
+        body: `The Symphony No. 9 in D minor, Op. 125, is a choral symphony, the final complete symphony by Ludwig van Beethoven, composed between 1822 and 1824. It was first performed in Vienna on 7 May 1824. The symphony is regarded by many critics and musicologists as Beethoven's greatest work and one of the supreme achievements in the history of music. One of the best-known works in common practice music, it stands as one of the most frequently performed symphonies in the world.`
+      },
+      '18': {
+        id: '18',
+        body: `Shall I compare thee to a summer's day?\nThou art more lovely and more temperate:\nRough winds do shake the darling buds of May,\nAnd summer's lease hath all too short a date;\nSometime too hot the eye of heaven shines,\nAnd often is his gold complexion dimm'd;\nAnd every fair from fair sometime declines,\nBy chance or nature's changing course untrimm'd;\nBut thy eternal summer shall not fade,\nNor lose possession of that fair thou ow'st;\nNor shall death brag thou wander'st in his shade,\nWhen in eternal lines to time thou grow'st:\nSo long as men can breathe or eyes can see,\nSo long lives this, and this gives life to thee.`
+      }
+    };
+
+    const displayEl = document.getElementById('contentDisplay');
+    const inputEl = document.getElementById('contentIdInput');
+    const loadBtn = document.getElementById('loadBtn');
+    const randomBtn = document.getElementById('randomBtn');
+
+    // 渲染文章 (无标题)
+    function renderPost(post) {
+      if (!post) return null;
+      const bodyHtml = post.body
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\n/g, '<br>')
+        .replace(/  /g, '&nbsp;&nbsp;');
+
+      return `
+        <div class="post-body">${bodyHtml}</div>
+      `;
+    }
+
+    // 静默清除输入框，不显示任何错误
+    function clearInputAndDisplay() {
+      inputEl.value = '';
+      displayEl.innerHTML = '';
+    }
+
+    function loadContentById(id) {
+      // 保留原始输入，区分大小写
+      const raw = String(id);
+      // 如果输入为空，清除显示
+      if (raw === '') {
+        clearInputAndDisplay();
+        return;
+      }
+
+      // 精确查找（区分大小写）
+      const found = posts.hasOwnProperty(raw) ? posts[raw] : null;
+      if (found) {
+        const html = renderPost(found);
+        if (html) {
+          displayEl.innerHTML = html;
+        } else {
+          // 渲染失败也清除
+          clearInputAndDisplay();
+        }
+      } else {
+        // 编号不存在：清除输入框 + 清除显示内容
+        clearInputAndDisplay();
+      }
+    }
+
+    // 随机加载：从所有键中随机选一个
+    function loadRandom() {
+      const keys = Object.keys(posts);
+      if (keys.length === 0) {
+        clearInputAndDisplay();
+        return;
+      }
+      const randomKey = keys[Math.floor(Math.random() * keys.length)];
+      inputEl.value = randomKey;
+      loadContentById(randomKey);
+    }
+
+    function init() {
+      // 初始无内容
+      displayEl.innerHTML = '';
+      inputEl.value = '';
+
+      loadBtn.addEventListener('click', function(e) {
+        const val = inputEl.value;
+        // 保留原始值，不去除空格（但去除首尾空格以符合直觉）
+        const trimmed = val.trim();
+        if (trimmed === '') {
+          clearInputAndDisplay();
+          return;
+        }
+        // 使用原始输入值（保留大小写）
+        loadContentById(val);
+      });
+
+      randomBtn.addEventListener('click', function(e) {
+        loadRandom();
+      });
+
+      inputEl.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const val = inputEl.value;
+          const trimmed = val.trim();
+          if (trimmed === '') {
+            clearInputAndDisplay();
+            return;
+          }
+          loadContentById(val);
+        }
+      });
+
+      inputEl.addEventListener('focus', function() {
+        this.select();
+      });
+    }
+
+    init();
+  })();
+</script>
+</body>
+</html>

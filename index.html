@@ -73,6 +73,58 @@
       color: #ff0000 !important;
     }
 
+    /* 音频播放按钮 - 紫色实心正方形，方角 */
+    .audio-btn {
+      display: inline-block;
+      width: 48px;
+      height: 48px;
+      background: #9b59b6;
+      border: none;
+      color: #000000 !important;
+      font-size: 0;
+      cursor: pointer;
+      padding: 0;
+      margin: 8px 0;
+      transition: all 0.15s;
+      box-shadow: 0 0 15px rgba(155, 89, 182, 0.3);
+      border-radius: 0 !important;
+      /* 实心正方形，没有任何圆角 */
+    }
+
+    .audio-btn:hover {
+      background: #8e44ad;
+      box-shadow: 0 0 25px rgba(155, 89, 182, 0.6);
+      transform: scale(1.05);
+    }
+
+    .audio-btn:active {
+      transform: scale(0.92);
+    }
+
+    /* 音频信息文字 - 播放时显示 */
+    .audio-info {
+      display: none;
+      margin-top: 8px;
+      font-size: 1.1rem;
+      line-height: 1.6;
+      opacity: 0.9;
+    }
+
+    .audio-info.playing {
+      display: block;
+    }
+
+    .audio-title {
+      font-weight: bold;
+      font-size: 1.3rem;
+    }
+
+    .audio-credit {
+      font-size: 0.95rem;
+      opacity: 0.6;
+      margin-top: 2px;
+    }
+
     .cmd-header {
       display: none;
     }
@@ -233,6 +285,10 @@
         font-size: 1rem;
         padding: 2px 6px;
       }
+      .audio-btn {
+        width: 40px;
+        height: 40px;
+      }
     }
 
     ::-webkit-scrollbar {
@@ -285,29 +341,29 @@
 
     // ----- 判断是否早于2008年8月11日 -----
     function isBefore20080811(date) {
-      const target = new Date(2008, 7, 11); // 2008-08-11
+      const target = new Date(2008, 7, 11);
       return date.getTime() < target.getTime();
     }
 
     // ----- 生成 20080811 的动态内容 -----
     function get20080811Content() {
       const now = getNow();
-      
-      // 早于 2008-08-11
       if (isBefore20080811(now)) {
         return '...';
       }
-      
-      // 是8月11日 (且年份 >= 2008)
       if (isAugust11(now)) {
         const year = now.getFullYear();
         const age = year - 2008;
         return `This is someone's ${age}th birthday.`;
       }
-      
-      // 不是8月11日，且 >= 2008-08-11
       return '...';
     }
+
+    // ============================================================
+    //  ★★★ 请修改这里的音频链接 ★★★
+    //  将 'audio.mp3' 改为您上传到 GitHub 仓库中的实际文件名
+    // ============================================================
+    const AUDIO_URL = '20260702.mp3';
 
     // ----- 博客数据 -----
     const posts = {
@@ -366,12 +422,12 @@
       },
       '20080811': {
         id: '20080811',
-        body: get20080811Content(),  // 动态内容
+        body: get20080811Content(),
         isDynamic: true
       },
       '19980829': {
         id: '19980829',
-        body: '',  // 空内容，不显示文字
+        body: '',
         isEmpty: true
       },
       '1225': {
@@ -389,6 +445,15 @@
       'KLARTSHARR': {
         id: 'KLARTSHARR',
         body: `STOP.`
+      },
+      // ============================================================
+      //  ★★★ 音频条目：20260702 ★★★
+      // ============================================================
+      '20260702': {
+        id: '20260702',
+        body: 'AUDIO_PLACEHOLDER',
+        hasAudio: true,
+        audioUrl: AUDIO_URL
       }
     };
 
@@ -398,18 +463,26 @@
     const randomBtn = document.getElementById('randomBtn');
     const titleEl = document.getElementById('pageTitle');
 
-    // 保存当前加载的编号，用于刷新时重新计算（20080811动态内容）
     let currentId = '';
+    let currentAudio = null;
 
     function renderPost(post, id) {
       if (!post) return null;
 
-      // 如果是 19980829，内容为空
       if (post.isEmpty) {
         return '';
       }
 
-      // 如果是动态内容（20080811），重新获取最新内容
+      if (post.hasAudio) {
+        return `<div class="post-body">
+          <button id="playAudioBtn" class="audio-btn"></button>
+          <div id="audioInfo" class="audio-info">
+            <div class="audio-title">Scarlet Forest</div>
+            <div class="audio-credit">From DELTARUNE Chapter 1 by Toby Fox.</div>
+          </div>
+        </div>`;
+      }
+
       let bodyText = post.body;
       if (post.isDynamic) {
         bodyText = get20080811Content();
@@ -422,7 +495,6 @@
         .replace(/\n/g, '<br>')
         .replace(/  /g, '&nbsp;&nbsp;');
 
-      // 如果是 666，用红色 span 包裹
       if (post.isRed) {
         bodyHtml = `<span class="red-text">${bodyHtml}</span>`;
       }
@@ -430,8 +502,55 @@
       return `<div class="post-body">${bodyHtml}</div>`;
     }
 
-    function clearDisplay() {
-      displayEl.innerHTML = '';
+    function bindAudioButton(post) {
+      if (!post || !post.hasAudio) return;
+      
+      const btn = document.getElementById('playAudioBtn');
+      const infoEl = document.getElementById('audioInfo');
+      
+      if (btn) {
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        
+        newBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          
+          // 如果已有音频在播放，停止并隐藏文字
+          if (currentAudio) {
+            currentAudio.pause();
+            currentAudio = null;
+            if (infoEl) {
+              infoEl.classList.remove('playing');
+            }
+            return;
+          }
+          
+          const audio = new Audio(post.audioUrl);
+          currentAudio = audio;
+          
+          // 显示文字
+          if (infoEl) {
+            infoEl.classList.add('playing');
+          }
+          
+          audio.play()
+            .then(function() {
+              audio.addEventListener('ended', function() {
+                currentAudio = null;
+                if (infoEl) {
+                  infoEl.classList.remove('playing');
+                }
+              });
+            })
+            .catch(function(err) {
+              console.log('音频播放失败:', err);
+              currentAudio = null;
+              if (infoEl) {
+                infoEl.classList.remove('playing');
+              }
+            });
+        });
+      }
     }
 
     function loadContentById(id) {
@@ -448,17 +567,20 @@
       if (found) {
         currentId = raw;
         titleEl.textContent = raw;
-        
-        // 19980829 特殊处理：清空内容，标题改为19980829，输入框保留
+
         if (found.isEmpty) {
           displayEl.innerHTML = '';
-          // 标题已经在上面设置了
           return;
         }
 
         const html = renderPost(found, raw);
         if (html !== null && html !== '') {
           displayEl.innerHTML = html;
+          
+          if (found.hasAudio) {
+            bindAudioButton(found);
+          }
+
           if (window.MathJax && MathJax.typesetPromise) {
             MathJax.typesetPromise().catch(function(err) {});
           }
@@ -466,7 +588,6 @@
           displayEl.innerHTML = '';
         }
       } else {
-        // 编号不存在：清除输入框 + 清除显示内容
         inputEl.value = '';
         displayEl.innerHTML = '';
         titleEl.textContent = '';
@@ -474,12 +595,10 @@
       }
     }
 
-    // 用于刷新页面时重新计算动态内容（20080811）
     function refreshCurrentContent() {
       if (currentId && posts.hasOwnProperty(currentId)) {
         const post = posts[currentId];
         if (post.isDynamic) {
-          // 重新渲染动态内容
           const html = renderPost(post, currentId);
           if (html !== null && html !== '') {
             displayEl.innerHTML = html;
@@ -548,14 +667,12 @@
         this.select();
       });
 
-      // 页面可见性变化时刷新动态内容（如从后台切回）
       document.addEventListener('visibilitychange', function() {
         if (!document.hidden) {
           refreshCurrentContent();
         }
       });
 
-      // 每分钟刷新一次动态内容（应对跨分钟边界）
       setInterval(function() {
         refreshCurrentContent();
       }, 60000);

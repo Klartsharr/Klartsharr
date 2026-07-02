@@ -565,9 +565,12 @@
     let isBgWhite = false;
     let squareInterval = null;
     let isSquareRunning = false;
+    
+    // ----- 背景音乐独立管理 -----
     let bgmAudio = null;
     let isBgmPlaying = false;
     let bgmResumeTimer = null;
+    let isBgmPausedForEffect = false;  // 标记是否因按钮效果而暂停
 
     // ============================================================
     // ★★★ 音频停止函数：停止所有正在播放的音频 ★★★
@@ -577,7 +580,6 @@
       if (currentAudio) {
         currentAudio.pause();
         currentAudio = null;
-        // 同时更新UI状态
         const infoEl = document.getElementById('audioInfo');
         if (infoEl) infoEl.classList.remove('playing');
       }
@@ -586,8 +588,8 @@
         bgmAudio.pause();
         bgmAudio = null;
         isBgmPlaying = false;
+        isBgmPausedForEffect = false;
       }
-      // 清除背景音乐恢复定时器
       clearTimeout(bgmResumeTimer);
       bgmResumeTimer = null;
     }
@@ -654,7 +656,6 @@
     function startBgTimer() {
       clearTimeout(bgTimer);
       bgTimer = setTimeout(function() {
-        // 只有当前在 testentry 时才变白
         if (currentId === 'testentry') {
           document.body.classList.add('bg-white');
           isBgWhite = true;
@@ -670,7 +671,6 @@
         isBgWhite = false;
         stopSquares();
       }
-      // 只有 testentry 才启动定时器
       if (currentId === 'testentry') {
         startBgTimer();
       }
@@ -679,30 +679,49 @@
     // ----- 背景音乐控制（仅 testentry） -----
     function startBgm() {
       clearTimeout(bgmResumeTimer);
-      if (bgmAudio) { bgmAudio.pause(); bgmAudio = null; }
+      if (bgmAudio) { 
+        bgmAudio.pause(); 
+        bgmAudio = null; 
+      }
       bgmAudio = new Audio(AUDIO_URL_TEST_BGM);
       bgmAudio.loop = true;
-      bgmAudio.play().catch(function(err) { console.log('背景音乐播放失败:', err); });
+      bgmAudio.play().catch(function(err) { 
+        console.log('背景音乐播放失败:', err); 
+      });
       isBgmPlaying = true;
+      isBgmPausedForEffect = false;
     }
 
-    function pauseBgm() {
+    // 暂停背景音乐（用于按钮效果）
+    function pauseBgmForEffect() {
+      if (!bgmAudio || !isBgmPlaying) return;
       clearTimeout(bgmResumeTimer);
-      if (bgmAudio) { bgmAudio.pause(); isBgmPlaying = false; }
+      bgmAudio.pause();
+      isBgmPlaying = false;
+      isBgmPausedForEffect = true;
     }
 
-    function resumeBgm() {
+    // 恢复背景音乐（按钮效果结束后调用）
+    function resumeBgmAfterEffect() {
       clearTimeout(bgmResumeTimer);
-      if (bgmAudio && !isBgmPlaying) {
-        bgmAudio.play().catch(function(err) { console.log('背景音乐恢复失败:', err); });
+      if (bgmAudio && !isBgmPlaying && isBgmPausedForEffect) {
+        bgmAudio.play().catch(function(err) {
+          console.log('背景音乐恢复失败:', err);
+        });
         isBgmPlaying = true;
-      } else if (!bgmAudio) { startBgm(); }
+        isBgmPausedForEffect = false;
+      } else if (!bgmAudio) {
+        startBgm();
+      }
     }
 
-    function pauseBgmWithResume(delay) {
-      pauseBgm();
+    // 按钮效果统一处理：暂停背景音乐，延迟后恢复
+    function handleButtonEffect() {
+      pauseBgmForEffect();
       clearTimeout(bgmResumeTimer);
-      bgmResumeTimer = setTimeout(function() { resumeBgm(); }, delay);
+      bgmResumeTimer = setTimeout(function() {
+        resumeBgmAfterEffect();
+      }, EFFECT_PAUSE_DURATION);
     }
 
     // ----- 渲染 -----
@@ -790,14 +809,17 @@
           if (existingRed) {
             existingRed.remove();
             redTextElement = null;
-            resumeBgm();
+            // 移除文字时立即恢复背景音乐
+            clearTimeout(bgmResumeTimer);
+            resumeBgmAfterEffect();
           } else {
             const div = document.createElement('div');
             div.className = 'red-text red-text-result';
             div.textContent = 'My apologies to all of these.';
             resultEl.appendChild(div);
             redTextElement = div;
-            pauseBgmWithResume(EFFECT_PAUSE_DURATION);
+            // 统一处理按钮效果
+            handleButtonEffect();
           }
         });
       }
@@ -806,7 +828,7 @@
           clearOtherEffects('yellow');
           const audio = new Audio(AUDIO_URL_YELLOW);
           audio.play().catch(function(err) { console.log('黄色音效播放失败:', err); });
-          pauseBgmWithResume(EFFECT_PAUSE_DURATION);
+          handleButtonEffect();
         });
       }
       if (blueBtn) {
@@ -814,7 +836,7 @@
           clearOtherEffects('blue');
           cloudImg.src = CLOUD_IMAGE_URL;
           cloudContainer.classList.add('show');
-          pauseBgmWithResume(EFFECT_PAUSE_DURATION);
+          handleButtonEffect();
           setTimeout(function() { cloudContainer.classList.remove('show'); }, 2000);
         });
       }
@@ -825,9 +847,7 @@
       const raw = String(id);
       if (raw === '') {
         inputEl.value = ''; displayEl.innerHTML = ''; titleEl.textContent = ''; 
-        // 停止所有音频
         stopAllAudio();
-        // 重置背景（移除白色）
         clearTimeout(bgTimer);
         if (isBgWhite) {
           document.body.classList.remove('bg-white');
@@ -839,13 +859,11 @@
       }
       const found = posts.hasOwnProperty(raw) ? posts[raw] : null;
       if (found) {
-        // ★★★ 切换条目时停止所有音频 ★★★
         stopAllAudio();
         
         currentId = raw;
         titleEl.textContent = raw;
         
-        // 重置背景定时器（只有 testentry 才会启动）
         clearTimeout(bgTimer);
         if (isBgWhite) {
           document.body.classList.remove('bg-white');
@@ -864,7 +882,6 @@
           if (found.isTestEntry) {
             startBgm();
             bindTestEntryButtons();
-            // 如果已经变白（但理论上不会，因为刚重置），检查状态
             if (isBgWhite) startSquares();
           }
           if (window.MathJax && MathJax.typesetPromise) {
@@ -923,7 +940,6 @@
       inputEl.value = '';
       titleEl.textContent = '';
       currentId = '';
-      // 初始不启动定时器，因为没有条目
 
       loadBtn.addEventListener('click', function(e) {
         const val = inputEl.value;

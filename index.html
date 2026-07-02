@@ -546,7 +546,6 @@
       'klartsharr': { id: 'klartsharr', body: `Spell it into a Name, would you?` },
       'KLARTSHARR': { id: 'KLARTSHARR', body: `STOP.` },
       '20260702': { id: '20260702', body: 'AUDIO_PLACEHOLDER', hasAudio: true, audioUrl: AUDIO_URL_20260702, audioTitle: 'Scarlet Forest', audioCredit: 'From DELTARUNE Chapter 1 by Toby Fox.' },
-      // 20260616 改为纯文本显示，没有音频按钮
       '20260616': { id: '20260616', body: `Piano Concerto in A Major\n\nThis concerto is dedicated to a most supportive friend of mine. Only with his calm, constant and heartfelt company could I conceive such peaceful melodies. Included in the Andante movement is a passage adapted from a very early prelude for piano solo of his, by which I first became acquainted with him during my last years of elementary school. Six years have passed since then, and I have graduated from high school. No word might possibly express the slightest of my gratitude for such a precious confidant, my dearest doctor of Mathematics who has always been with me in my teenage years.` },
       'testentry': { id: 'testentry', body: 'TEST_ENTRY_PLACEHOLDER', isTestEntry: true }
     };
@@ -569,6 +568,29 @@
     let bgmAudio = null;
     let isBgmPlaying = false;
     let bgmResumeTimer = null;
+
+    // ============================================================
+    // ★★★ 音频停止函数：停止所有正在播放的音频 ★★★
+    // ============================================================
+    function stopAllAudio() {
+      // 停止 20260702 的音频
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+        // 同时更新UI状态
+        const infoEl = document.getElementById('audioInfo');
+        if (infoEl) infoEl.classList.remove('playing');
+      }
+      // 停止 testentry 的背景音乐
+      if (bgmAudio) {
+        bgmAudio.pause();
+        bgmAudio = null;
+        isBgmPlaying = false;
+      }
+      // 清除背景音乐恢复定时器
+      clearTimeout(bgmResumeTimer);
+      bgmResumeTimer = null;
+    }
 
     // ----- 黑色小方块：持续追加，不删除旧方块 -----
     function addSquareBatch() {
@@ -628,13 +650,14 @@
       }, 8000);
     }
 
-    // ----- 背景变白 -----
+    // ----- 背景变白（只在 testentry 中生效） -----
     function startBgTimer() {
       clearTimeout(bgTimer);
       bgTimer = setTimeout(function() {
-        document.body.classList.add('bg-white');
-        isBgWhite = true;
+        // 只有当前在 testentry 时才变白
         if (currentId === 'testentry') {
+          document.body.classList.add('bg-white');
+          isBgWhite = true;
           startSquares();
         }
       }, 60000);
@@ -647,10 +670,13 @@
         isBgWhite = false;
         stopSquares();
       }
-      startBgTimer();
+      // 只有 testentry 才启动定时器
+      if (currentId === 'testentry') {
+        startBgTimer();
+      }
     }
 
-    // ----- 背景音乐控制 -----
+    // ----- 背景音乐控制（仅 testentry） -----
     function startBgm() {
       clearTimeout(bgmResumeTimer);
       if (bgmAudio) { bgmAudio.pause(); bgmAudio = null; }
@@ -677,11 +703,6 @@
       pauseBgm();
       clearTimeout(bgmResumeTimer);
       bgmResumeTimer = setTimeout(function() { resumeBgm(); }, delay);
-    }
-
-    function stopBgm() {
-      clearTimeout(bgmResumeTimer);
-      if (bgmAudio) { bgmAudio.pause(); bgmAudio = null; isBgmPlaying = false; }
     }
 
     // ----- 渲染 -----
@@ -799,20 +820,42 @@
       }
     }
 
+    // ----- 加载内容 -----
     function loadContentById(id) {
       const raw = String(id);
       if (raw === '') {
-        inputEl.value = ''; displayEl.innerHTML = ''; titleEl.textContent = ''; currentId = '';
-        stopBgm(); resetBgTimer(); stopSquares();
+        inputEl.value = ''; displayEl.innerHTML = ''; titleEl.textContent = ''; 
+        // 停止所有音频
+        stopAllAudio();
+        // 重置背景（移除白色）
+        clearTimeout(bgTimer);
+        if (isBgWhite) {
+          document.body.classList.remove('bg-white');
+          isBgWhite = false;
+          stopSquares();
+        }
+        currentId = '';
         return;
       }
       const found = posts.hasOwnProperty(raw) ? posts[raw] : null;
       if (found) {
+        // ★★★ 切换条目时停止所有音频 ★★★
+        stopAllAudio();
+        
         currentId = raw;
         titleEl.textContent = raw;
-        resetBgTimer();
-        stopBgm();
-        stopSquares();
+        
+        // 重置背景定时器（只有 testentry 才会启动）
+        clearTimeout(bgTimer);
+        if (isBgWhite) {
+          document.body.classList.remove('bg-white');
+          isBgWhite = false;
+          stopSquares();
+        }
+        if (found.isTestEntry) {
+          startBgTimer();
+        }
+        
         if (found.isEmpty) { displayEl.innerHTML = ''; return; }
         const html = renderPost(found, raw);
         if (html !== null && html !== '') {
@@ -821,6 +864,7 @@
           if (found.isTestEntry) {
             startBgm();
             bindTestEntryButtons();
+            // 如果已经变白（但理论上不会，因为刚重置），检查状态
             if (isBgWhite) startSquares();
           }
           if (window.MathJax && MathJax.typesetPromise) {
@@ -828,8 +872,15 @@
           }
         } else { displayEl.innerHTML = ''; }
       } else {
-        inputEl.value = ''; displayEl.innerHTML = ''; titleEl.textContent = ''; currentId = '';
-        stopBgm(); resetBgTimer(); stopSquares();
+        inputEl.value = ''; displayEl.innerHTML = ''; titleEl.textContent = ''; 
+        stopAllAudio();
+        clearTimeout(bgTimer);
+        if (isBgWhite) {
+          document.body.classList.remove('bg-white');
+          isBgWhite = false;
+          stopSquares();
+        }
+        currentId = '';
       }
     }
 
@@ -851,8 +902,15 @@
     function loadRandom() {
       const keys = Object.keys(posts);
       if (keys.length === 0) {
-        inputEl.value = ''; displayEl.innerHTML = ''; titleEl.textContent = ''; currentId = '';
-        stopBgm(); resetBgTimer(); stopSquares();
+        inputEl.value = ''; displayEl.innerHTML = ''; titleEl.textContent = ''; 
+        stopAllAudio();
+        clearTimeout(bgTimer);
+        if (isBgWhite) {
+          document.body.classList.remove('bg-white');
+          isBgWhite = false;
+          stopSquares();
+        }
+        currentId = '';
         return;
       }
       const randomKey = keys[Math.floor(Math.random() * keys.length)];
@@ -865,14 +923,21 @@
       inputEl.value = '';
       titleEl.textContent = '';
       currentId = '';
-      startBgTimer();
+      // 初始不启动定时器，因为没有条目
 
       loadBtn.addEventListener('click', function(e) {
         const val = inputEl.value;
         const trimmed = val.trim();
         if (trimmed === '') {
-          inputEl.value = ''; displayEl.innerHTML = ''; titleEl.textContent = ''; currentId = '';
-          stopBgm(); resetBgTimer(); stopSquares();
+          inputEl.value = ''; displayEl.innerHTML = ''; titleEl.textContent = ''; 
+          stopAllAudio();
+          clearTimeout(bgTimer);
+          if (isBgWhite) {
+            document.body.classList.remove('bg-white');
+            isBgWhite = false;
+            stopSquares();
+          }
+          currentId = '';
           return;
         }
         loadContentById(val);
@@ -886,8 +951,15 @@
           const val = inputEl.value;
           const trimmed = val.trim();
           if (trimmed === '') {
-            inputEl.value = ''; displayEl.innerHTML = ''; titleEl.textContent = ''; currentId = '';
-            stopBgm(); resetBgTimer(); stopSquares();
+            inputEl.value = ''; displayEl.innerHTML = ''; titleEl.textContent = ''; 
+            stopAllAudio();
+            clearTimeout(bgTimer);
+            if (isBgWhite) {
+              document.body.classList.remove('bg-white');
+              isBgWhite = false;
+              stopSquares();
+            }
+            currentId = '';
             return;
           }
           loadContentById(val);

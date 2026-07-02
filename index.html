@@ -35,6 +35,7 @@
       font-family: 'Courier New', Courier, 'Nouveau IBM', 'VT323', monospace;
       padding: 16px;
       font-family: 'SF Mono', 'Menlo', 'Monaco', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+      transition: background-color 2s ease;
     }
 
     .terminal {
@@ -42,6 +43,7 @@
       width: 100%;
       background: #000000;
       padding: 24px 20px 28px;
+      transition: background-color 2s ease;
     }
 
     .terminal, .terminal * {
@@ -49,6 +51,71 @@
       font-weight: 400;
       letter-spacing: 0.3px;
       text-shadow: none;
+    }
+
+    /* 白色背景模式 */
+    body.bg-white {
+      background: #ffffff;
+    }
+    body.bg-white .terminal {
+      background: #ffffff;
+    }
+    body.bg-white .terminal,
+    body.bg-white .terminal * {
+      color: #000000 !important;
+    }
+    body.bg-white .MathJax_SVG,
+    body.bg-white .MathJax {
+      color: #000000 !important;
+      fill: #000000 !important;
+    }
+    body.bg-white .MathJax_SVG * {
+      color: #000000 !important;
+      fill: #000000 !important;
+    }
+    body.bg-white .MathJax_SVG g path,
+    body.bg-white .MathJax_SVG g rect,
+    body.bg-white .MathJax_SVG g use {
+      stroke: #000000 !important;
+      fill: #000000 !important;
+    }
+    body.bg-white .MathJax_SVG mtext,
+    body.bg-white .MathJax_SVG mi,
+    body.bg-white .MathJax_SVG mn,
+    body.bg-white .MathJax_SVG mo {
+      fill: #000000 !important;
+      color: #000000 !important;
+    }
+    body.bg-white .audio-btn {
+      background: #000000 !important;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3) !important;
+    }
+    body.bg-white .audio-btn:hover {
+      background: #333333 !important;
+    }
+    body.bg-white .red-text {
+      color: #ff0000 !important;
+    }
+    body.bg-white .black-text {
+      color: #000000 !important;
+    }
+    body.bg-white .btn {
+      color: #000000 !important;
+      text-decoration-color: #000000 !important;
+    }
+    body.bg-white .btn:hover {
+      color: #000000 !important;
+    }
+    body.bg-white #contentIdInput {
+      color: #000000 !important;
+      border-bottom-color: #000000 !important;
+      caret-color: #000000 !important;
+    }
+    body.bg-white #contentIdInput:focus {
+      border-bottom-color: #000000 !important;
+    }
+    body.bg-white .color-btn {
+      border-color: #000000 !important;
     }
 
     .MathJax_SVG, .MathJax {
@@ -68,12 +135,15 @@
       color: #9b59b6 !important;
     }
 
-    /* 红色字体用于 666 */
     .red-text {
       color: #ff0000 !important;
     }
 
-    /* 音频播放按钮 - 紫色实心正方形，方角 */
+    .black-text {
+      color: #000000 !important;
+    }
+
+    /* 音频播放按钮 - 紫色实心正方形 */
     .audio-btn {
       display: inline-block;
       width: 48px;
@@ -88,7 +158,6 @@
       transition: all 0.15s;
       box-shadow: 0 0 15px rgba(155, 89, 182, 0.3);
       border-radius: 0 !important;
-      /* 实心正方形，没有任何圆角 */
     }
 
     .audio-btn:hover {
@@ -101,7 +170,6 @@
       transform: scale(0.92);
     }
 
-    /* 音频信息文字 - 播放时显示 */
     .audio-info {
       display: none;
       margin-top: 8px;
@@ -123,6 +191,65 @@
       font-size: 0.95rem;
       opacity: 0.6;
       margin-top: 2px;
+    }
+
+    /* testentry 按钮行 */
+    .color-buttons {
+      display: flex;
+      gap: 12px;
+      margin: 12px 0 8px 0;
+      flex-wrap: wrap;
+    }
+
+    .color-btn {
+      width: 40px;
+      height: 40px;
+      border: 2px solid #9b59b6;
+      border-radius: 0 !important;
+      cursor: pointer;
+      transition: all 0.2s;
+      padding: 0;
+    }
+
+    .color-btn:hover {
+      transform: scale(1.1);
+    }
+
+    .color-btn:active {
+      transform: scale(0.9);
+    }
+
+    .color-btn-red {
+      background: #ff0000;
+      border-color: #ff0000;
+    }
+
+    .color-btn-yellow {
+      background: #ffd700;
+      border-color: #ffd700;
+    }
+
+    .color-btn-blue {
+      background: #87ceeb;
+      border-color: #87ceeb;
+    }
+
+    /* 云朵图片淡入淡出 */
+    .cloud-image {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 80%;
+      max-height: 80%;
+      opacity: 0;
+      transition: opacity 2s ease;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    .cloud-image.show {
+      opacity: 1;
     }
 
     .cmd-header {
@@ -289,6 +416,10 @@
         width: 40px;
         height: 40px;
       }
+      .color-btn {
+        width: 34px;
+        height: 34px;
+      }
     }
 
     ::-webkit-scrollbar {
@@ -327,6 +458,11 @@
   <div class="footer-note"></div>
 </div>
 
+<!-- 云朵图片容器 -->
+<div id="cloudContainer" class="cloud-image">
+  <img id="cloudImg" src="" alt="cloud" style="max-width:100%; max-height:100%;">
+</div>
+
 <script>
   (function() {
     // ----- 辅助函数：获取当前系统时间 -----
@@ -334,18 +470,15 @@
       return new Date();
     }
 
-    // ----- 判断是否为8月11日 (月=7, 日=11, 因为getMonth()从0开始) -----
     function isAugust11(date) {
       return date.getMonth() === 7 && date.getDate() === 11;
     }
 
-    // ----- 判断是否早于2008年8月11日 -----
     function isBefore20080811(date) {
       const target = new Date(2008, 7, 11);
       return date.getTime() < target.getTime();
     }
 
-    // ----- 生成 20080811 的动态内容 -----
     function get20080811Content() {
       const now = getNow();
       if (isBefore20080811(now)) {
@@ -360,10 +493,16 @@
     }
 
     // ============================================================
-    //  ★★★ 请修改这里的音频链接 ★★★
-    //  将 'audio.mp3' 改为您上传到 GitHub 仓库中的实际文件名
+    //  ★★★ 音频链接配置 ★★★
     // ============================================================
-    const AUDIO_URL = '20260702.mp3';
+    const AUDIO_URL_20260702 = '20260702.mp3';
+    const AUDIO_URL_20260616 = '20260616.mp3';
+    const AUDIO_URL_TEST_BGM = 'testentry.mp3';      // testentry 背景音乐（循环）
+    const AUDIO_URL_YELLOW = 'button1.mp3';         // 鹅黄色按钮音效
+    const CLOUD_IMAGE_URL = 'testcloud.png';
+
+    // 按钮效果暂停背景音乐的时间（毫秒）
+    const EFFECT_PAUSE_DURATION = 5000; // 5秒
 
     // ----- 博客数据 -----
     const posts = {
@@ -446,14 +585,26 @@
         id: 'KLARTSHARR',
         body: `STOP.`
       },
-      // ============================================================
-      //  ★★★ 音频条目：20260702 ★★★
-      // ============================================================
       '20260702': {
         id: '20260702',
         body: 'AUDIO_PLACEHOLDER',
         hasAudio: true,
-        audioUrl: AUDIO_URL
+        audioUrl: AUDIO_URL_20260702,
+        audioTitle: 'Scarlet Forest',
+        audioCredit: 'From DELTARUNE Chapter 1 by Toby Fox.'
+      },
+      '20260616': {
+        id: '20260616',
+        body: 'AUDIO_PLACEHOLDER',
+        hasAudio: true,
+        audioUrl: AUDIO_URL_20260616,
+        audioTitle: 'Piano Concerto in A Major',
+        audioCredit: `This concerto is dedicated to a most supportive friend of mine. Only with his calm, constant and heartfelt company could I conceive such peaceful melodies. Included in the Andante movement is a passage adapted from a very early prelude for piano solo of his, by which I first became acquainted with him during my last years of elementary school. Six years have passed since then, and I have graduated from high school. No word might possibly express the slightest of my gratitude for such a precious confidant, my dearest doctor of Mathematics who has always been with me in my teenage years.`
+      },
+      'testentry': {
+        id: 'testentry',
+        body: 'TEST_ENTRY_PLACEHOLDER',
+        isTestEntry: true
       }
     };
 
@@ -462,10 +613,91 @@
     const loadBtn = document.getElementById('loadBtn');
     const randomBtn = document.getElementById('randomBtn');
     const titleEl = document.getElementById('pageTitle');
+    const cloudContainer = document.getElementById('cloudContainer');
+    const cloudImg = document.getElementById('cloudImg');
 
     let currentId = '';
     let currentAudio = null;
+    let bgTimer = null;
+    let isBgWhite = false;
 
+    // testentry 背景音乐
+    let bgmAudio = null;
+    let isBgmPlaying = false;
+    let bgmResumeTimer = null; // 恢复背景音乐的定时器
+
+    // ----- 背景变白 -----
+    function startBgTimer() {
+      clearTimeout(bgTimer);
+      bgTimer = setTimeout(function() {
+        document.body.classList.add('bg-white');
+        isBgWhite = true;
+      }, 60000);
+    }
+
+    function resetBgTimer() {
+      clearTimeout(bgTimer);
+      if (isBgWhite) {
+        document.body.classList.remove('bg-white');
+        isBgWhite = false;
+      }
+      startBgTimer();
+    }
+
+    // ----- testentry 背景音乐控制 -----
+    function startBgm() {
+      clearTimeout(bgmResumeTimer);
+      if (bgmAudio) {
+        bgmAudio.pause();
+        bgmAudio = null;
+      }
+      bgmAudio = new Audio(AUDIO_URL_TEST_BGM);
+      bgmAudio.loop = true;
+      bgmAudio.play().catch(function(err) {
+        console.log('背景音乐播放失败:', err);
+      });
+      isBgmPlaying = true;
+    }
+
+    function pauseBgm() {
+      clearTimeout(bgmResumeTimer);
+      if (bgmAudio) {
+        bgmAudio.pause();
+        isBgmPlaying = false;
+      }
+    }
+
+    function resumeBgm() {
+      clearTimeout(bgmResumeTimer);
+      if (bgmAudio && !isBgmPlaying) {
+        bgmAudio.play().catch(function(err) {
+          console.log('背景音乐恢复失败:', err);
+        });
+        isBgmPlaying = true;
+      } else if (!bgmAudio) {
+        startBgm();
+      }
+    }
+
+    // 暂停背景音乐，并在指定时间后恢复
+    function pauseBgmWithResume(delay) {
+      pauseBgm();
+      clearTimeout(bgmResumeTimer);
+      bgmResumeTimer = setTimeout(function() {
+        resumeBgm();
+      }, delay);
+    }
+
+    function stopBgm() {
+      clearTimeout(bgmResumeTimer);
+      if (bgmAudio) {
+        bgmAudio.pause();
+        bgmAudio = null;
+        isBgmPlaying = false;
+      }
+    }
+
+    // ----- 渲染 post -----
     function renderPost(post, id) {
       if (!post) return null;
 
@@ -477,9 +709,22 @@
         return `<div class="post-body">
           <button id="playAudioBtn" class="audio-btn"></button>
           <div id="audioInfo" class="audio-info">
-            <div class="audio-title">Scarlet Forest</div>
-            <div class="audio-credit">From DELTARUNE Chapter 1 by Toby Fox.</div>
+            <div class="audio-title">${post.audioTitle}</div>
+            <div class="audio-credit">${post.audioCredit}</div>
           </div>
+        </div>`;
+      }
+
+      if (post.isTestEntry) {
+        return `<div class="post-body">
+          <div>This is a test entry. Feel free to activate the button, and everything else...</div>
+          <div class="black-text">... including this.</div>
+          <div class="color-buttons">
+            <button class="color-btn color-btn-red" data-color="red"></button>
+            <button class="color-btn color-btn-yellow" data-color="yellow"></button>
+            <button class="color-btn color-btn-blue" data-color="blue"></button>
+          </div>
+          <div id="testEntryResult"></div>
         </div>`;
       }
 
@@ -502,6 +747,7 @@
       return `<div class="post-body">${bodyHtml}</div>`;
     }
 
+    // ----- 绑定音频按钮 -----
     function bindAudioButton(post) {
       if (!post || !post.hasAudio) return;
       
@@ -515,7 +761,6 @@
         newBtn.addEventListener('click', function(e) {
           e.stopPropagation();
           
-          // 如果已有音频在播放，停止并隐藏文字
           if (currentAudio) {
             currentAudio.pause();
             currentAudio = null;
@@ -528,7 +773,6 @@
           const audio = new Audio(post.audioUrl);
           currentAudio = audio;
           
-          // 显示文字
           if (infoEl) {
             infoEl.classList.add('playing');
           }
@@ -553,6 +797,92 @@
       }
     }
 
+    // ----- 绑定 testentry 按钮 -----
+    function bindTestEntryButtons() {
+      const redBtn = document.querySelector('.color-btn-red');
+      const yellowBtn = document.querySelector('.color-btn-yellow');
+      const blueBtn = document.querySelector('.color-btn-blue');
+      const resultEl = document.getElementById('testEntryResult');
+
+      // 红色文字元素引用
+      let redTextElement = null;
+
+      // 清除其他按钮效果（保留音效），并暂停背景音乐
+      function clearOtherEffects(keepColor) {
+        // 清除红色文字（但保留引用，由红色按钮自己控制）
+        if (keepColor !== 'red') {
+          const redText = resultEl.querySelector('.red-text-result');
+          if (redText) {
+            redText.remove();
+            redTextElement = null;
+          }
+        }
+        // 清除蓝色云朵
+        if (keepColor !== 'blue') {
+          cloudContainer.classList.remove('show');
+        }
+      }
+
+      // 红色按钮 - 可再次点击切换显示/隐藏文字，同时重新播放背景音乐
+      if (redBtn) {
+        redBtn.addEventListener('click', function() {
+          // 清除其他按钮效果（红色保留）
+          clearOtherEffects('red');
+          
+          // 查找现有红色文字
+          const existingRed = resultEl.querySelector('.red-text-result');
+          
+          if (existingRed) {
+            // 如果已存在，移除文字，恢复背景音乐
+            existingRed.remove();
+            redTextElement = null;
+            // 恢复背景音乐（立即恢复）
+            resumeBgm();
+          } else {
+            // 不存在则创建文字
+            const div = document.createElement('div');
+            div.className = 'red-text red-text-result';
+            div.textContent = 'My apologies to all of these.';
+            resultEl.appendChild(div);
+            redTextElement = div;
+            // 暂停背景音乐5秒后恢复
+            pauseBgmWithResume(EFFECT_PAUSE_DURATION);
+          }
+        });
+      }
+
+      // 鹅黄色按钮
+      if (yellowBtn) {
+        yellowBtn.addEventListener('click', function() {
+          clearOtherEffects('yellow');
+          // 播放音效
+          const audio = new Audio(AUDIO_URL_YELLOW);
+          audio.play().catch(function(err) {
+            console.log('黄色音效播放失败:', err);
+          });
+          // 暂停背景音乐5秒后恢复
+          pauseBgmWithResume(EFFECT_PAUSE_DURATION);
+        });
+      }
+
+      // 天蓝色按钮
+      if (blueBtn) {
+        blueBtn.addEventListener('click', function() {
+          clearOtherEffects('blue');
+          // 设置云朵图片
+          cloudImg.src = CLOUD_IMAGE_URL;
+          cloudContainer.classList.add('show');
+          // 暂停背景音乐5秒后恢复
+          pauseBgmWithResume(EFFECT_PAUSE_DURATION);
+          // 2s后淡出云朵（但不影响背景音乐恢复，音乐在5秒后恢复）
+          setTimeout(function() {
+            cloudContainer.classList.remove('show');
+          }, 2000);
+        });
+      }
+    }
+
+    // ----- 加载内容 -----
     function loadContentById(id) {
       const raw = String(id);
       if (raw === '') {
@@ -560,6 +890,8 @@
         displayEl.innerHTML = '';
         titleEl.textContent = '';
         currentId = '';
+        stopBgm();
+        resetBgTimer();
         return;
       }
 
@@ -567,6 +899,9 @@
       if (found) {
         currentId = raw;
         titleEl.textContent = raw;
+        resetBgTimer();
+
+        stopBgm();
 
         if (found.isEmpty) {
           displayEl.innerHTML = '';
@@ -581,6 +916,11 @@
             bindAudioButton(found);
           }
 
+          if (found.isTestEntry) {
+            startBgm();
+            bindTestEntryButtons();
+          }
+
           if (window.MathJax && MathJax.typesetPromise) {
             MathJax.typesetPromise().catch(function(err) {});
           }
@@ -592,9 +932,12 @@
         displayEl.innerHTML = '';
         titleEl.textContent = '';
         currentId = '';
+        stopBgm();
+        resetBgTimer();
       }
     }
 
+    // ----- 刷新动态内容 -----
     function refreshCurrentContent() {
       if (currentId && posts.hasOwnProperty(currentId)) {
         const post = posts[currentId];
@@ -610,6 +953,7 @@
       }
     }
 
+    // ----- 随机加载 -----
     function loadRandom() {
       const keys = Object.keys(posts);
       if (keys.length === 0) {
@@ -617,6 +961,8 @@
         displayEl.innerHTML = '';
         titleEl.textContent = '';
         currentId = '';
+        stopBgm();
+        resetBgTimer();
         return;
       }
       const randomKey = keys[Math.floor(Math.random() * keys.length)];
@@ -624,11 +970,13 @@
       loadContentById(randomKey);
     }
 
+    // ----- 初始化 -----
     function init() {
       displayEl.innerHTML = '';
       inputEl.value = '';
       titleEl.textContent = '';
       currentId = '';
+      startBgTimer();
 
       loadBtn.addEventListener('click', function(e) {
         const val = inputEl.value;
@@ -638,6 +986,8 @@
           displayEl.innerHTML = '';
           titleEl.textContent = '';
           currentId = '';
+          stopBgm();
+          resetBgTimer();
           return;
         }
         loadContentById(val);
@@ -657,6 +1007,8 @@
             displayEl.innerHTML = '';
             titleEl.textContent = '';
             currentId = '';
+            stopBgm();
+            resetBgTimer();
             return;
           }
           loadContentById(val);

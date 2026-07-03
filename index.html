@@ -317,8 +317,8 @@
       padding: 12px 0 16px 0;
       box-shadow: none;
       margin-bottom: 16px;
-      transition: opacity 0.6s ease;
       opacity: 1;
+      transition: opacity 0.6s ease;
     }
     .input-area.hidden {
       display: none;
@@ -619,9 +619,6 @@
     const CLOUD_IMAGE_URL = 'testcloud.png';
     const EFFECT_PAUSE_DURATION = 4000;
 
-    // 循环播放的截止时间（从末尾倒数3秒）
-    const LOOP_END_OFFSET = 3; // 秒
-
     const posts = {
       '0': { id: '0', body: `The origin.\nSome say it's trivial; some say it's bizarre. In whichever way, we must proceed.` },
       '1': { id: '1', body: `This marks the beginning of calculations.` },
@@ -675,53 +672,38 @@
     let bgmResumeTimer = null;
     let isBgmPausedForEffect = false;
 
-    // 答题界面背景音乐
     let answerBgmAudio = null;
     let isAnswerBgmPlaying = false;
 
     // ============================================================
-    // ★★★ 循环播放工具函数 ★★★
+    // ★★★ 循环播放工具函数（简化可靠版本） ★★★
     // ============================================================
-    function setupLoopPlayback(audioElement, loopEndOffset) {
-      if (!audioElement) return;
+    function createLoopedAudio(url, loopEndOffset) {
+      var audio = new Audio(url);
+      var isLoopSetup = false;
       
-      let isLoopSetup = false;
-      
-      audioElement.addEventListener('loadedmetadata', function() {
-        const duration = audioElement.duration;
-        if (duration > loopEndOffset && !isLoopSetup) {
+      function setupLoop() {
+        if (isLoopSetup) return;
+        var duration = audio.duration;
+        if (duration > loopEndOffset && isFinite(duration)) {
           isLoopSetup = true;
-          const loopEnd = duration - loopEndOffset;
-          audioElement.addEventListener('timeupdate', function onTimeUpdate() {
-            if (audioElement.currentTime >= loopEnd) {
-              audioElement.currentTime = 0;
-              audioElement.play().catch(function(err) {
-                // 静默处理
-              });
-            }
-          });
-        }
-      });
-      
-      // 如果音频已经加载完成
-      if (audioElement.readyState >= 1) {
-        const duration = audioElement.duration;
-        if (duration > loopEndOffset && !isLoopSetup) {
-          isLoopSetup = true;
-          const loopEnd = duration - loopEndOffset;
-          audioElement.addEventListener('timeupdate', function onTimeUpdate() {
-            if (audioElement.currentTime >= loopEnd) {
-              audioElement.currentTime = 0;
-              audioElement.play().catch(function(err) {});
+          var loopEnd = duration - loopEndOffset;
+          audio.addEventListener('timeupdate', function onTimeUpdate() {
+            if (audio.currentTime >= loopEnd) {
+              audio.currentTime = 0;
+              audio.play().catch(function() {});
             }
           });
         }
       }
-    }
-
-    function createLoopedAudio(url, loopEndOffset) {
-      const audio = new Audio(url);
-      setupLoopPlayback(audio, loopEndOffset);
+      
+      audio.addEventListener('loadedmetadata', setupLoop);
+      
+      // 如果音频已经加载完成
+      if (audio.readyState >= 1) {
+        setupLoop();
+      }
+      
       return audio;
     }
 
@@ -736,6 +718,7 @@
     function showInitialInput() {
       initialInputArea.classList.remove('hidden');
       initialInputArea.classList.remove('fade-in');
+      // 强制重排触发动画
       void initialInputArea.offsetWidth;
       initialInputArea.classList.add('fade-in');
     }
@@ -745,13 +728,13 @@
     // ============================================================
     function stopAllAudio() {
       if (currentAudio) {
-        currentAudio.pause();
+        try { currentAudio.pause(); } catch(e) {}
         currentAudio = null;
-        const infoEl = document.getElementById('audioInfo');
+        var infoEl = document.getElementById('audioInfo');
         if (infoEl) infoEl.classList.remove('playing');
       }
       if (bgmAudio) {
-        bgmAudio.pause();
+        try { bgmAudio.pause(); } catch(e) {}
         bgmAudio = null;
         isBgmPlaying = false;
         isBgmPausedForEffect = false;
@@ -759,13 +742,13 @@
       clearTimeout(bgmResumeTimer);
       bgmResumeTimer = null;
       if (answerAudio) {
-        answerAudio.pause();
+        try { answerAudio.pause(); } catch(e) {}
         answerAudio = null;
       }
       clearTimeout(answerTimeout);
       answerTimeout = null;
       if (answerBgmAudio) {
-        answerBgmAudio.pause();
+        try { answerBgmAudio.pause(); } catch(e) {}
         answerBgmAudio = null;
         isAnswerBgmPlaying = false;
       }
@@ -774,21 +757,21 @@
     // ----- 黑色小方块 -----
     function addSquareBatch() {
       if (!isSquareRunning) return;
-      const container = squareContainer;
-      const count = 15 + Math.floor(Math.random() * 15);
-      for (let i = 0; i < count; i++) {
-        const square = document.createElement('div');
+      var container = squareContainer;
+      var count = 15 + Math.floor(Math.random() * 15);
+      for (var i = 0; i < count; i++) {
+        var square = document.createElement('div');
         square.className = 'square';
-        const startX = Math.random() * 90;
-        const startY = Math.random() * 90;
+        var startX = Math.random() * 90;
+        var startY = Math.random() * 90;
         square.style.left = startX + '%';
         square.style.top = startY + '%';
-        const targetX = (100 - startX) * 0.8 + 10;
-        const targetY = (100 - startY) * 0.8 + 10;
+        var targetX = (100 - startX) * 0.8 + 10;
+        var targetY = (100 - startY) * 0.8 + 10;
         square.style.setProperty('--tx', targetX + 'vw');
         square.style.setProperty('--ty', targetY + 'vh');
         square.style.setProperty('--delay', (Math.random() * 0.8) + 's');
-        const size = 4 + Math.random() * 10;
+        var size = 4 + Math.random() * 10;
         square.style.setProperty('--size', size + 'px');
         square.style.setProperty('--duration', (3 + Math.random() * 3) + 's');
         container.appendChild(square);
@@ -840,11 +823,11 @@
       if (currentId === 'testentry') startBgTimer();
     }
 
-    // ----- testentry 背景音乐控制（带循环） -----
+    // ----- testentry 背景音乐控制 -----
     function startBgm() {
       clearTimeout(bgmResumeTimer);
       if (bgmAudio) { 
-        bgmAudio.pause(); 
+        try { bgmAudio.pause(); } catch(e) {}
         bgmAudio = null; 
       }
       bgmAudio = createLoopedAudio(AUDIO_URL_TEST_BGM, LOOP_END_OFFSET);
@@ -858,7 +841,7 @@
     function pauseBgmForEffect() {
       if (!bgmAudio || !isBgmPlaying) return;
       clearTimeout(bgmResumeTimer);
-      bgmAudio.pause();
+      try { bgmAudio.pause(); } catch(e) {}
       isBgmPlaying = false;
       isBgmPausedForEffect = true;
     }
@@ -882,10 +865,10 @@
       bgmResumeTimer = setTimeout(function() { resumeBgmAfterEffect(); }, EFFECT_PAUSE_DURATION);
     }
 
-    // ----- 答题界面背景音乐控制（带循环） -----
+    // ----- 答题界面背景音乐控制 -----
     function startAnswerBgm() {
       if (answerBgmAudio) {
-        answerBgmAudio.pause();
+        try { answerBgmAudio.pause(); } catch(e) {}
         answerBgmAudio = null;
       }
       answerBgmAudio = createLoopedAudio(AUDIO_URL_20260703_BGM, LOOP_END_OFFSET);
@@ -897,7 +880,7 @@
 
     function stopAnswerBgm() {
       if (answerBgmAudio) {
-        answerBgmAudio.pause();
+        try { answerBgmAudio.pause(); } catch(e) {}
         answerBgmAudio = null;
         isAnswerBgmPlaying = false;
       }
@@ -906,19 +889,19 @@
     // ============================================================
     // ★★★ 20260703 答案验证逻辑 ★★★
     // ============================================================
-    const CORRECT_ANSWERS = ['\\dfrac{288}{125}', '288/125', '2.304'];
-    const WRONG_ANSWERS = ['24/7', '25/7', '24/25', '4/3', '5/3', '5/4', '1', '1.25', '1.5', '3/2', '5/2', '2', '2.5', '3', '4'];
+    var CORRECT_ANSWERS = ['\\dfrac{288}{125}', '288/125', '2.304'];
+    var WRONG_ANSWERS = ['24/7', '25/7', '24/25', '4/3', '5/3', '5/4', '1', '1.25', '1.5', '3/2', '5/2', '2', '2.5', '3', '4'];
 
     function checkAnswer(inputVal) {
-      const trimmed = inputVal.trim();
+      var trimmed = inputVal.trim();
       if (trimmed === '') return;
       
-      if (CORRECT_ANSWERS.includes(trimmed)) {
+      if (CORRECT_ANSWERS.indexOf(trimmed) !== -1) {
         triggerCorrectAnswer();
         return;
       }
       
-      if (WRONG_ANSWERS.includes(trimmed)) {
+      if (WRONG_ANSWERS.indexOf(trimmed) !== -1) {
         triggerWrongAnswer();
         return;
       }
@@ -928,7 +911,7 @@
 
     function resetToInitialState() {
       if (answerAudio) {
-        answerAudio.pause();
+        try { answerAudio.pause(); } catch(e) {}
         answerAudio = null;
       }
       clearTimeout(answerTimeout);
@@ -952,10 +935,8 @@
       
       isAnswerEffectActive = true;
       
-      // 停止答题背景音乐
       stopAnswerBgm();
       
-      // 使用循环播放的音频
       answerAudio = createLoopedAudio(AUDIO_URL_20260703_CORRECT, LOOP_END_OFFSET);
       answerAudio.play().catch(function(err) { 
         console.log('正确答案音乐播放失败:', err); 
@@ -965,12 +946,12 @@
       isBgWhite = true;
       startSquares();
       
-      const answerArea = document.querySelector('.answer-input-area');
+      var answerArea = document.querySelector('.answer-input-area');
       if (answerArea) {
         answerArea.classList.add('hidden');
       }
       
-      const displayDiv = document.getElementById('answerDisplay');
+      var displayDiv = document.getElementById('answerDisplay');
       if (displayDiv) {
         displayDiv.innerHTML = '$$\\dfrac{288}{125}$$';
         if (window.MathJax && MathJax.typesetPromise) {
@@ -978,7 +959,7 @@
         }
       }
       
-      const resultDiv = document.getElementById('answerResult');
+      var resultDiv = document.getElementById('answerResult');
       if (resultDiv) {
         resultDiv.innerHTML = '<div class="correct-answer-text">THAT\'S RIGHT! A REALLY BAD-LOOKING ANSWER!!!</div>';
       }
@@ -996,18 +977,19 @@
       
       isAnswerEffectActive = true;
       
-      // 停止答题背景音乐
       stopAnswerBgm();
       
       answerAudio = new Audio(AUDIO_URL_20260703_WRONG);
-      answerAudio.play().catch(function(err) { console.log('错误答案音效播放失败:', err); });
+      answerAudio.play().catch(function(err) { 
+        console.log('错误答案音效播放失败:', err); 
+      });
       
-      const answerArea = document.querySelector('.answer-input-area');
+      var answerArea = document.querySelector('.answer-input-area');
       if (answerArea) {
         answerArea.classList.add('hidden');
       }
       
-      const resultDiv = document.getElementById('answerResult');
+      var resultDiv = document.getElementById('answerResult');
       if (resultDiv) {
         resultDiv.innerHTML = '<div class="wrong-answer-text">So that\'s the best you could imagine???</div>';
       }
@@ -1022,13 +1004,13 @@
 
     function clearAnswerEffects() {
       if (answerAudio) {
-        answerAudio.pause();
+        try { answerAudio.pause(); } catch(e) {}
         answerAudio = null;
       }
       clearTimeout(answerTimeout);
       answerTimeout = null;
       
-      const resultDiv = document.getElementById('answerResult');
+      var resultDiv = document.getElementById('answerResult');
       if (resultDiv) resultDiv.innerHTML = '';
       
       isAnswerEffectActive = false;
@@ -1039,61 +1021,58 @@
       if (!post) return null;
       if (post.isEmpty) return '';
       if (post.hasAudio) {
-        return `<div class="post-body">
-          <button id="playAudioBtn" class="audio-btn"></button>
-          <div id="audioInfo" class="audio-info">
-            <div class="audio-title">${post.audioTitle}</div>
-            <div class="audio-credit">${post.audioCredit}</div>
-          </div>
-        </div>`;
+        return '<div class="post-body">' +
+          '<button id="playAudioBtn" class="audio-btn"></button>' +
+          '<div id="audioInfo" class="audio-info">' +
+          '<div class="audio-title">' + post.audioTitle + '</div>' +
+          '<div class="audio-credit">' + post.audioCredit + '</div>' +
+          '</div></div>';
       }
       if (post.isTestEntry) {
-        return `<div class="post-body">
-          <div>This is a test entry. Feel free to activate the buttons, and everything else...</div>
-          <div class="black-text">... including this.</div>
-          <div class="color-buttons">
-            <button class="color-btn color-btn-red" data-color="red"></button>
-            <button class="color-btn color-btn-yellow" data-color="yellow"></button>
-            <button class="color-btn color-btn-blue" data-color="blue"></button>
-          </div>
-          <div id="testEntryResult"></div>
-        </div>`;
+        return '<div class="post-body">' +
+          '<div>This is a test entry. Feel free to activate the buttons, and everything else...</div>' +
+          '<div class="black-text">... including this.</div>' +
+          '<div class="color-buttons">' +
+          '<button class="color-btn color-btn-red" data-color="red"></button>' +
+          '<button class="color-btn color-btn-yellow" data-color="yellow"></button>' +
+          '<button class="color-btn color-btn-blue" data-color="blue"></button>' +
+          '</div>' +
+          '<div id="testEntryResult"></div>' +
+          '</div>';
       }
       if (post.isAnswerEntry) {
         hideInitialInput();
-        // 启动答题背景音乐
         startAnswerBgm();
-        return `<div class="post-body">
-          <div>Let $PS$, $PT$ be two lines tangent to parabola $y^{2}=2px$ at two distinct points $S$ and $T$ which intersect at point $P$. Given that $\\left|PS\\right|=3$, $\\left|PT\\right|=4$, $\\left|ST\\right|=5$, we can calculate that $\\left|p\\right|=$</div>
-          <div id="answerDisplay"></div>
-          <div id="answerResult"></div>
-          <div class="answer-input-area">
-            <input type="text" id="answerInput" placeholder="" maxlength="30" spellcheck="false">
-          </div>
-        </div>`;
+        return '<div class="post-body">' +
+          '<div>Let $PS$, $PT$ be two lines tangent to parabola $y^{2}=2px$ at two distinct points $S$ and $T$ which intersect at point $P$. Given that $\\left|PS\\right|=3$, $\\left|PT\\right|=4$, $\\left|ST\\right|=5$, we can calculate that $\\left|p\\right|=$</div>' +
+          '<div id="answerDisplay"></div>' +
+          '<div id="answerResult"></div>' +
+          '<div class="answer-input-area">' +
+          '<input type="text" id="answerInput" placeholder="" maxlength="30" spellcheck="false">' +
+          '</div></div>';
       }
-      let bodyText = post.isDynamic ? get20080811Content() : post.body;
-      let bodyHtml = bodyText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>').replace(/  /g, '&nbsp;&nbsp;');
-      if (post.isRed) bodyHtml = `<span class="red-text">${bodyHtml}</span>`;
-      return `<div class="post-body">${bodyHtml}</div>`;
+      var bodyText = post.isDynamic ? get20080811Content() : post.body;
+      var bodyHtml = bodyText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>').replace(/  /g, '&nbsp;&nbsp;');
+      if (post.isRed) bodyHtml = '<span class="red-text">' + bodyHtml + '</span>';
+      return '<div class="post-body">' + bodyHtml + '</div>';
     }
 
     function bindAudioButton(post) {
       if (!post || !post.hasAudio) return;
-      const btn = document.getElementById('playAudioBtn');
-      const infoEl = document.getElementById('audioInfo');
+      var btn = document.getElementById('playAudioBtn');
+      var infoEl = document.getElementById('audioInfo');
       if (btn) {
-        const newBtn = btn.cloneNode(true);
+        var newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
         newBtn.addEventListener('click', function(e) {
           e.stopPropagation();
           if (currentAudio) {
-            currentAudio.pause();
+            try { currentAudio.pause(); } catch(e) {}
             currentAudio = null;
             if (infoEl) infoEl.classList.remove('playing');
             return;
           }
-          const audio = new Audio(post.audioUrl);
+          var audio = new Audio(post.audioUrl);
           currentAudio = audio;
           if (infoEl) infoEl.classList.add('playing');
           audio.play().then(function() {
@@ -1111,11 +1090,11 @@
     }
 
     function bindAnswerEntry() {
-      const inputField = document.getElementById('answerInput');
+      var inputField = document.getElementById('answerInput');
       if (!inputField) return;
       
       function handleSubmit() {
-        const val = inputField.value;
+        var val = inputField.value;
         checkAnswer(val);
       }
       
@@ -1130,15 +1109,15 @@
     }
 
     function bindTestEntryButtons() {
-      const redBtn = document.querySelector('.color-btn-red');
-      const yellowBtn = document.querySelector('.color-btn-yellow');
-      const blueBtn = document.querySelector('.color-btn-blue');
-      const resultEl = document.getElementById('testEntryResult');
-      let redTextElement = null;
+      var redBtn = document.querySelector('.color-btn-red');
+      var yellowBtn = document.querySelector('.color-btn-yellow');
+      var blueBtn = document.querySelector('.color-btn-blue');
+      var resultEl = document.getElementById('testEntryResult');
+      var redTextElement = null;
 
       function clearOtherEffects(keepColor) {
         if (keepColor !== 'red') {
-          const redText = resultEl.querySelector('.red-text-result');
+          var redText = resultEl.querySelector('.red-text-result');
           if (redText) { redText.remove(); redTextElement = null; }
         }
         if (keepColor !== 'blue') cloudContainer.classList.remove('show');
@@ -1147,14 +1126,14 @@
       if (redBtn) {
         redBtn.addEventListener('click', function() {
           clearOtherEffects('red');
-          const existingRed = resultEl.querySelector('.red-text-result');
+          var existingRed = resultEl.querySelector('.red-text-result');
           if (existingRed) {
             existingRed.remove();
             redTextElement = null;
             clearTimeout(bgmResumeTimer);
             resumeBgmAfterEffect();
           } else {
-            const div = document.createElement('div');
+            var div = document.createElement('div');
             div.className = 'red-text red-text-result';
             div.textContent = 'My apologies to all of these.';
             resultEl.appendChild(div);
@@ -1166,7 +1145,7 @@
       if (yellowBtn) {
         yellowBtn.addEventListener('click', function() {
           clearOtherEffects('yellow');
-          const audio = new Audio(AUDIO_URL_YELLOW);
+          var audio = new Audio(AUDIO_URL_YELLOW);
           audio.play().catch(function(err) { console.log('黄色音效播放失败:', err); });
           handleButtonEffect();
         });
@@ -1184,7 +1163,7 @@
 
     // ----- 加载内容 -----
     function loadContentById(id) {
-      const raw = String(id);
+      var raw = String(id);
       if (raw === '') {
         inputEl.value = ''; displayEl.innerHTML = ''; titleEl.textContent = ''; 
         stopAllAudio();
@@ -1198,7 +1177,7 @@
         showInitialInput();
         return;
       }
-      const found = posts.hasOwnProperty(raw) ? posts[raw] : null;
+      var found = posts.hasOwnProperty(raw) ? posts[raw] : null;
       if (found) {
         stopAllAudio();
         
@@ -1231,7 +1210,7 @@
           return; 
         }
         
-        const html = renderPost(found, raw);
+        var html = renderPost(found, raw);
         if (html !== null && html !== '') {
           displayEl.innerHTML = html;
           if (found.hasAudio) bindAudioButton(found);
@@ -1266,9 +1245,9 @@
 
     function refreshCurrentContent() {
       if (currentId && posts.hasOwnProperty(currentId)) {
-        const post = posts[currentId];
+        var post = posts[currentId];
         if (post.isDynamic) {
-          const html = renderPost(post, currentId);
+          var html = renderPost(post, currentId);
           if (html !== null && html !== '') {
             displayEl.innerHTML = html;
             if (window.MathJax && MathJax.typesetPromise) {
@@ -1280,7 +1259,7 @@
     }
 
     function loadRandom() {
-      const keys = Object.keys(posts);
+      var keys = Object.keys(posts);
       if (keys.length === 0) {
         inputEl.value = ''; displayEl.innerHTML = ''; titleEl.textContent = ''; 
         stopAllAudio();
@@ -1294,7 +1273,7 @@
         showInitialInput();
         return;
       }
-      const randomKey = keys[Math.floor(Math.random() * keys.length)];
+      var randomKey = keys[Math.floor(Math.random() * keys.length)];
       inputEl.value = randomKey;
       loadContentById(randomKey);
     }
@@ -1307,8 +1286,8 @@
       showInitialInput();
 
       loadBtn.addEventListener('click', function(e) {
-        const val = inputEl.value;
-        const trimmed = val.trim();
+        var val = inputEl.value;
+        var trimmed = val.trim();
         if (trimmed === '') {
           inputEl.value = ''; displayEl.innerHTML = ''; titleEl.textContent = ''; 
           stopAllAudio();
@@ -1330,8 +1309,8 @@
       inputEl.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
           e.preventDefault();
-          const val = inputEl.value;
-          const trimmed = val.trim();
+          var val = inputEl.value;
+          var trimmed = val.trim();
           if (trimmed === '') {
             inputEl.value = ''; displayEl.innerHTML = ''; titleEl.textContent = ''; 
             stopAllAudio();

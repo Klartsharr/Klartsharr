@@ -167,6 +167,13 @@
     body.bg-white .square {
       background: #000000;
     }
+    body.bg-white .answer-input-area input {
+      color: #000000 !important;
+      border-bottom-color: #000000 !important;
+    }
+    body.bg-white .answer-input-area input:focus {
+      border-bottom-color: #000000 !important;
+    }
 
     .MathJax_SVG, .MathJax {
       color: #9b59b6 !important;
@@ -303,12 +310,26 @@
       display: none;
     }
 
+    /* 初始输入区域 - 用于选择条目 */
     .input-area {
       background: transparent;
       border: none;
       padding: 12px 0 16px 0;
       box-shadow: none;
       margin-bottom: 16px;
+      transition: opacity 0.6s ease;
+      opacity: 1;
+    }
+    .input-area.hidden {
+      display: none;
+    }
+    .input-area.fade-in {
+      animation: fadeIn 0.6s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
     }
 
     .prompt-line {
@@ -444,6 +465,69 @@
       letter-spacing: 0.3px;
     }
 
+    /* 20260703 答案输入区 - 样式与初始横线相同 */
+    .answer-input-area {
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .answer-input-area.hidden {
+      display: none;
+    }
+
+    .answer-input-area input {
+      background: transparent;
+      border: none;
+      padding: 4px 6px;
+      font-family: inherit;
+      font-size: 1.3rem;
+      width: 160px;
+      color: #9b59b6;
+      text-align: left;
+      outline: none;
+      box-shadow: none;
+      caret-color: #9b59b6;
+      border-bottom: 1px dotted #9b59b6;
+      border-radius: 0;
+      letter-spacing: 0.5px;
+      transition: border-color 0.1s;
+    }
+
+    .answer-input-area input:focus {
+      border-bottom: 1px solid #9b59b6;
+    }
+
+    /* 正确答案特效文字 */
+    .correct-answer-text {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-top: 20px;
+      animation: colorPulse 0.8s ease-in-out infinite alternate;
+      text-shadow: 0 0 20px #9b59b6, 0 0 40px #9b59b6, 0 0 60px #9b59b6;
+      transition: text-shadow 0.3s;
+    }
+
+    @keyframes colorPulse {
+      0% { color: #ff0000; text-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000, 0 0 60px #ff0000; }
+      100% { color: #9b59b6; text-shadow: 0 0 20px #9b59b6, 0 0 40px #9b59b6, 0 0 60px #9b59b6; }
+    }
+
+    .wrong-answer-text {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-top: 16px;
+      color: #9b59b6;
+    }
+
+    .answer-display {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-top: 12px;
+      color: #9b59b6;
+    }
+
     @media (max-width: 560px) {
       .terminal {
         padding: 16px 12px;
@@ -467,6 +551,13 @@
         width: 34px;
         height: 34px;
       }
+      .answer-input-area input {
+        width: 120px;
+        font-size: 1.1rem;
+      }
+      .correct-answer-text {
+        font-size: 1.2rem;
+      }
     }
 
     ::-webkit-scrollbar {
@@ -486,8 +577,8 @@
 <body>
 <div id="squareContainer" class="square-container"></div>
 
-<div class="terminal">
-  <div class="input-area">
+<div class="terminal" id="terminalContainer">
+  <div class="input-area" id="initialInputArea">
     <div class="prompt-line">
       <span class="prompt-symbol"></span>
       <span class="prompt-text"></span>
@@ -522,8 +613,13 @@
     const AUDIO_URL_20260702 = '20260702.mp3';
     const AUDIO_URL_TEST_BGM = 'testentry.mp3';
     const AUDIO_URL_YELLOW = 'button1.mp3';
+    const AUDIO_URL_20260703_CORRECT = 'YES!!!.mp3';
+    const AUDIO_URL_20260703_WRONG = 'expl.mp3';
     const CLOUD_IMAGE_URL = 'testcloud.png';
     const EFFECT_PAUSE_DURATION = 4000;
+
+    // 循环播放的截止时间（从末尾倒数3秒）
+    const LOOP_END_OFFSET = 3; // 秒
 
     const posts = {
       '0': { id: '0', body: `The origin.\nSome say it's trivial; some say it's bizarre. In whichever way, we must proceed.` },
@@ -547,9 +643,12 @@
       'KLARTSHARR': { id: 'KLARTSHARR', body: `STOP.` },
       '20260702': { id: '20260702', body: 'AUDIO_PLACEHOLDER', hasAudio: true, audioUrl: AUDIO_URL_20260702, audioTitle: 'Scarlet Forest', audioCredit: 'From DELTARUNE Chapter 1 by Toby Fox.' },
       '20260616': { id: '20260616', body: `Piano Concerto in A Major\n\nThis concerto is dedicated to a most supportive friend of mine. Only with his calm, constant and heartfelt company could I conceive such peaceful melodies. Included in the Andante movement is a passage adapted from a very early prelude for piano solo of his, by which I first became acquainted with him during my last years of elementary school. Six years have passed since then, and I have graduated from high school. No word might possibly express the slightest of my gratitude for such a precious confidant, my dearest doctor of Mathematics who has always been with me in my teenage years.` },
-      'testentry': { id: 'testentry', body: 'TEST_ENTRY_PLACEHOLDER', isTestEntry: true }
+      'testentry': { id: 'testentry', body: 'TEST_ENTRY_PLACEHOLDER', isTestEntry: true },
+      '20260703': { id: '20260703', body: 'ANSWER_ENTRY_PLACEHOLDER', isAnswerEntry: true }
     };
 
+    const terminalContainer = document.getElementById('terminalContainer');
+    const initialInputArea = document.getElementById('initialInputArea');
     const displayEl = document.getElementById('contentDisplay');
     const inputEl = document.getElementById('contentIdInput');
     const loadBtn = document.getElementById('loadBtn');
@@ -566,24 +665,69 @@
     let squareInterval = null;
     let isSquareRunning = false;
     
-    // ----- 背景音乐独立管理 -----
+    let answerTimeout = null;
+    let answerAudio = null;
+    let isAnswerEffectActive = false;
+
     let bgmAudio = null;
     let isBgmPlaying = false;
     let bgmResumeTimer = null;
-    let isBgmPausedForEffect = false;  // 标记是否因按钮效果而暂停
+    let isBgmPausedForEffect = false;
 
     // ============================================================
-    // ★★★ 音频停止函数：停止所有正在播放的音频 ★★★
+    // ★★★ 循环播放工具函数 ★★★
+    // ============================================================
+    function setupLoopPlayback(audioElement, loopEndOffset) {
+      if (!audioElement) return;
+      
+      // 等待音频元数据加载完成
+      audioElement.addEventListener('loadedmetadata', function() {
+        const duration = audioElement.duration;
+        if (duration > loopEndOffset) {
+          const loopEnd = duration - loopEndOffset;
+          audioElement.addEventListener('timeupdate', function onTimeUpdate() {
+            if (audioElement.currentTime >= loopEnd) {
+              audioElement.currentTime = 0;
+              audioElement.play().catch(function(err) {
+                console.log('循环播放跳转失败:', err);
+              });
+            }
+          });
+        }
+      });
+    }
+
+    function createLoopedAudio(url, loopEndOffset) {
+      const audio = new Audio(url);
+      setupLoopPlayback(audio, loopEndOffset);
+      return audio;
+    }
+
+    // ============================================================
+    // ★★★ 初始横线显示/隐藏控制 ★★★
+    // ============================================================
+    function hideInitialInput() {
+      initialInputArea.classList.add('hidden');
+      initialInputArea.classList.remove('fade-in');
+    }
+
+    function showInitialInput() {
+      initialInputArea.classList.remove('hidden');
+      initialInputArea.classList.remove('fade-in');
+      void initialInputArea.offsetWidth;
+      initialInputArea.classList.add('fade-in');
+    }
+
+    // ============================================================
+    // ★★★ 音频停止函数 ★★★
     // ============================================================
     function stopAllAudio() {
-      // 停止 20260702 的音频
       if (currentAudio) {
         currentAudio.pause();
         currentAudio = null;
         const infoEl = document.getElementById('audioInfo');
         if (infoEl) infoEl.classList.remove('playing');
       }
-      // 停止 testentry 的背景音乐
       if (bgmAudio) {
         bgmAudio.pause();
         bgmAudio = null;
@@ -592,34 +736,34 @@
       }
       clearTimeout(bgmResumeTimer);
       bgmResumeTimer = null;
+      if (answerAudio) {
+        answerAudio.pause();
+        answerAudio = null;
+      }
+      clearTimeout(answerTimeout);
+      answerTimeout = null;
     }
 
-    // ----- 黑色小方块：持续追加，不删除旧方块 -----
+    // ----- 黑色小方块 -----
     function addSquareBatch() {
       if (!isSquareRunning) return;
-      
       const container = squareContainer;
       const count = 15 + Math.floor(Math.random() * 15);
-      
       for (let i = 0; i < count; i++) {
         const square = document.createElement('div');
         square.className = 'square';
-        
         const startX = Math.random() * 90;
         const startY = Math.random() * 90;
         square.style.left = startX + '%';
         square.style.top = startY + '%';
-        
         const targetX = (100 - startX) * 0.8 + 10;
         const targetY = (100 - startY) * 0.8 + 10;
         square.style.setProperty('--tx', targetX + 'vw');
         square.style.setProperty('--ty', targetY + 'vh');
-        
         square.style.setProperty('--delay', (Math.random() * 0.8) + 's');
         const size = 4 + Math.random() * 10;
         square.style.setProperty('--size', size + 'px');
         square.style.setProperty('--duration', (3 + Math.random() * 3) + 's');
-        
         container.appendChild(square);
       }
     }
@@ -629,12 +773,9 @@
       isSquareRunning = true;
       squareContainer.innerHTML = '';
       squareContainer.classList.add('active');
-      
       addSquareBatch();
       squareInterval = setInterval(function() {
-        if (isSquareRunning) {
-          addSquareBatch();
-        }
+        if (isSquareRunning) addSquareBatch();
       }, 1500);
     }
 
@@ -646,13 +787,11 @@
       }
       squareContainer.classList.remove('active');
       setTimeout(function() {
-        if (!isSquareRunning) {
-          squareContainer.innerHTML = '';
-        }
+        if (!isSquareRunning) squareContainer.innerHTML = '';
       }, 8000);
     }
 
-    // ----- 背景变白（只在 testentry 中生效） -----
+    // ----- 背景变白 -----
     function startBgTimer() {
       clearTimeout(bgTimer);
       bgTimer = setTimeout(function() {
@@ -671,20 +810,18 @@
         isBgWhite = false;
         stopSquares();
       }
-      if (currentId === 'testentry') {
-        startBgTimer();
-      }
+      if (currentId === 'testentry') startBgTimer();
     }
 
-    // ----- 背景音乐控制（仅 testentry） -----
+    // ----- testentry 背景音乐控制（带循环） -----
     function startBgm() {
       clearTimeout(bgmResumeTimer);
       if (bgmAudio) { 
         bgmAudio.pause(); 
         bgmAudio = null; 
       }
-      bgmAudio = new Audio(AUDIO_URL_TEST_BGM);
-      bgmAudio.loop = true;
+      bgmAudio = createLoopedAudio(AUDIO_URL_TEST_BGM, LOOP_END_OFFSET);
+      bgmAudio.loop = false; // 使用自定义循环
       bgmAudio.play().catch(function(err) { 
         console.log('背景音乐播放失败:', err); 
       });
@@ -692,7 +829,6 @@
       isBgmPausedForEffect = false;
     }
 
-    // 暂停背景音乐（用于按钮效果）
     function pauseBgmForEffect() {
       if (!bgmAudio || !isBgmPlaying) return;
       clearTimeout(bgmResumeTimer);
@@ -701,7 +837,6 @@
       isBgmPausedForEffect = true;
     }
 
-    // 恢复背景音乐（按钮效果结束后调用）
     function resumeBgmAfterEffect() {
       clearTimeout(bgmResumeTimer);
       if (bgmAudio && !isBgmPlaying && isBgmPausedForEffect) {
@@ -710,18 +845,139 @@
         });
         isBgmPlaying = true;
         isBgmPausedForEffect = false;
-      } else if (!bgmAudio) {
-        startBgm();
+      } else if (!bgmAudio) { 
+        startBgm(); 
       }
     }
 
-    // 按钮效果统一处理：暂停背景音乐，延迟后恢复
     function handleButtonEffect() {
       pauseBgmForEffect();
       clearTimeout(bgmResumeTimer);
-      bgmResumeTimer = setTimeout(function() {
-        resumeBgmAfterEffect();
-      }, EFFECT_PAUSE_DURATION);
+      bgmResumeTimer = setTimeout(function() { resumeBgmAfterEffect(); }, EFFECT_PAUSE_DURATION);
+    }
+
+    // ============================================================
+    // ★★★ 20260703 答案验证逻辑 ★★★
+    // ============================================================
+    const CORRECT_ANSWERS = ['\\dfrac{288}{125}', '288/125', '2.304'];
+    const WRONG_ANSWERS = ['24/7', '25/7', '24/25', '4/3', '5/3', '5/4', '1', '1.25', '1.5', '3/2', '5/2', '2', '2.5', '3', '4'];
+
+    function checkAnswer(inputVal) {
+      const trimmed = inputVal.trim();
+      if (trimmed === '') return;
+      
+      if (CORRECT_ANSWERS.includes(trimmed)) {
+        triggerCorrectAnswer();
+        return;
+      }
+      
+      if (WRONG_ANSWERS.includes(trimmed)) {
+        triggerWrongAnswer();
+        return;
+      }
+      
+      resetToInitialState();
+    }
+
+    function resetToInitialState() {
+      if (answerAudio) {
+        answerAudio.pause();
+        answerAudio = null;
+      }
+      clearTimeout(answerTimeout);
+      answerTimeout = null;
+      
+      displayEl.innerHTML = '';
+      showInitialInput();
+      
+      if (isBgWhite) {
+        document.body.classList.remove('bg-white');
+        isBgWhite = false;
+        stopSquares();
+      }
+      
+      isAnswerEffectActive = false;
+    }
+
+    function triggerCorrectAnswer() {
+      clearAnswerEffects();
+      
+      isAnswerEffectActive = true;
+      
+      // 使用循环播放的音频
+      answerAudio = createLoopedAudio(AUDIO_URL_20260703_CORRECT, LOOP_END_OFFSET);
+      answerAudio.play().catch(function(err) { 
+        console.log('正确答案音乐播放失败:', err); 
+      });
+      
+      document.body.classList.add('bg-white');
+      isBgWhite = true;
+      startSquares();
+      
+      const answerArea = document.querySelector('.answer-input-area');
+      if (answerArea) {
+        answerArea.classList.add('hidden');
+      }
+      
+      const displayDiv = document.getElementById('answerDisplay');
+      if (displayDiv) {
+        displayDiv.innerHTML = '$$\\dfrac{288}{125}$$';
+        if (window.MathJax && MathJax.typesetPromise) {
+          MathJax.typesetPromise().catch(function(err) {});
+        }
+      }
+      
+      const resultDiv = document.getElementById('answerResult');
+      if (resultDiv) {
+        resultDiv.innerHTML = '<div class="correct-answer-text">THAT\'S RIGHT! A REALLY BAD-LOOKING ANSWER!!!</div>';
+      }
+      
+      clearTimeout(answerTimeout);
+      answerTimeout = setTimeout(function() {
+        if (currentId === '20260703') {
+          showInitialInput();
+        }
+      }, 5000);
+    }
+
+    function triggerWrongAnswer() {
+      clearAnswerEffects();
+      
+      isAnswerEffectActive = true;
+      
+      answerAudio = new Audio(AUDIO_URL_20260703_WRONG);
+      answerAudio.play().catch(function(err) { console.log('错误答案音效播放失败:', err); });
+      
+      const answerArea = document.querySelector('.answer-input-area');
+      if (answerArea) {
+        answerArea.classList.add('hidden');
+      }
+      
+      const resultDiv = document.getElementById('answerResult');
+      if (resultDiv) {
+        resultDiv.innerHTML = '<div class="wrong-answer-text">So that\'s all you could imagine???</div>';
+      }
+      
+      clearTimeout(answerTimeout);
+      answerTimeout = setTimeout(function() {
+        if (currentId === '20260703') {
+          showInitialInput();
+        }
+      }, 5000);
+    }
+
+    function clearAnswerEffects() {
+      if (answerAudio) {
+        answerAudio.pause();
+        answerAudio = null;
+      }
+      clearTimeout(answerTimeout);
+      answerTimeout = null;
+      
+      const resultDiv = document.getElementById('answerResult');
+      if (resultDiv) resultDiv.innerHTML = '';
+      
+      isAnswerEffectActive = false;
     }
 
     // ----- 渲染 -----
@@ -747,6 +1003,17 @@
             <button class="color-btn color-btn-blue" data-color="blue"></button>
           </div>
           <div id="testEntryResult"></div>
+        </div>`;
+      }
+      if (post.isAnswerEntry) {
+        hideInitialInput();
+        return `<div class="post-body">
+          <div>Let $PS$, $PT$ be two lines tangent to parabola $y^{2}=2px$ at two distinct points $S$ and $T$ which intersect at point $P$. Given that $\\left|PS\\right|=3$, $\\left|PT\\right|=4$, $\\left|ST\\right|=5$, we can calculate that $\\left|p\\right|=$</div>
+          <div id="answerDisplay"></div>
+          <div id="answerResult"></div>
+          <div class="answer-input-area">
+            <input type="text" id="answerInput" placeholder="" maxlength="30" spellcheck="false">
+          </div>
         </div>`;
       }
       let bodyText = post.isDynamic ? get20080811Content() : post.body;
@@ -787,6 +1054,25 @@
       }
     }
 
+    function bindAnswerEntry() {
+      const inputField = document.getElementById('answerInput');
+      if (!inputField) return;
+      
+      function handleSubmit() {
+        const val = inputField.value;
+        checkAnswer(val);
+      }
+      
+      inputField.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleSubmit();
+        }
+      });
+      
+      inputField.addEventListener('focus', function() { this.select(); });
+    }
+
     function bindTestEntryButtons() {
       const redBtn = document.querySelector('.color-btn-red');
       const yellowBtn = document.querySelector('.color-btn-yellow');
@@ -809,7 +1095,6 @@
           if (existingRed) {
             existingRed.remove();
             redTextElement = null;
-            // 移除文字时立即恢复背景音乐
             clearTimeout(bgmResumeTimer);
             resumeBgmAfterEffect();
           } else {
@@ -818,7 +1103,6 @@
             div.textContent = 'My apologies to all of these.';
             resultEl.appendChild(div);
             redTextElement = div;
-            // 统一处理按钮效果
             handleButtonEffect();
           }
         });
@@ -855,11 +1139,21 @@
           stopSquares();
         }
         currentId = '';
+        showInitialInput();
         return;
       }
       const found = posts.hasOwnProperty(raw) ? posts[raw] : null;
       if (found) {
         stopAllAudio();
+        
+        if (currentId === '20260703') {
+          clearAnswerEffects();
+          if (isBgWhite) {
+            document.body.classList.remove('bg-white');
+            isBgWhite = false;
+            stopSquares();
+          }
+        }
         
         currentId = raw;
         titleEl.textContent = raw;
@@ -874,7 +1168,12 @@
           startBgTimer();
         }
         
-        if (found.isEmpty) { displayEl.innerHTML = ''; return; }
+        if (found.isEmpty) { 
+          displayEl.innerHTML = '';
+          showInitialInput();
+          return; 
+        }
+        
         const html = renderPost(found, raw);
         if (html !== null && html !== '') {
           displayEl.innerHTML = html;
@@ -884,10 +1183,16 @@
             bindTestEntryButtons();
             if (isBgWhite) startSquares();
           }
+          if (found.isAnswerEntry) {
+            bindAnswerEntry();
+          }
           if (window.MathJax && MathJax.typesetPromise) {
             MathJax.typesetPromise().catch(function(err) {});
           }
-        } else { displayEl.innerHTML = ''; }
+        } else { 
+          displayEl.innerHTML = '';
+          showInitialInput();
+        }
       } else {
         inputEl.value = ''; displayEl.innerHTML = ''; titleEl.textContent = ''; 
         stopAllAudio();
@@ -898,6 +1203,7 @@
           stopSquares();
         }
         currentId = '';
+        showInitialInput();
       }
     }
 
@@ -928,6 +1234,7 @@
           stopSquares();
         }
         currentId = '';
+        showInitialInput();
         return;
       }
       const randomKey = keys[Math.floor(Math.random() * keys.length)];
@@ -940,6 +1247,7 @@
       inputEl.value = '';
       titleEl.textContent = '';
       currentId = '';
+      showInitialInput();
 
       loadBtn.addEventListener('click', function(e) {
         const val = inputEl.value;
@@ -954,6 +1262,7 @@
             stopSquares();
           }
           currentId = '';
+          showInitialInput();
           return;
         }
         loadContentById(val);
@@ -976,6 +1285,7 @@
               stopSquares();
             }
             currentId = '';
+            showInitialInput();
             return;
           }
           loadContentById(val);

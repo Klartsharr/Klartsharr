@@ -1037,8 +1037,7 @@
         document.body.classList.add('bg-white');
         isBgWhite = true;
         startSquares();
-        stopSpecialAudio();
-        playAudioOnce(AUDIO_URL_20260703_CORRECT);
+        startSpecialAudioLoop(AUDIO_URL_20260703_CORRECT);
         answerRow.innerHTML = `<span id="problemAnswerDisplay" class="answer-display">$$\\dfrac{288}{125}$$</span>`;
         messageEl.innerHTML = `<span class="correct-message">THAT'S RIGHT! A REALLY BAD-LOOKING ANSWER!!!</span>`;
         if (window.MathJax && MathJax.typesetPromise) {

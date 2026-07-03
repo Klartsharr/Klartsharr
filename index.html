@@ -220,12 +220,16 @@
 
     .correct-message {
       animation: pulseColor 2.5s ease-in-out infinite;
-      text-shadow: 0 0 10px rgba(255, 0, 0, 0.7), 0 0 20px rgba(138, 43, 226, 0.5);
+      text-shadow: 0 0 12px rgba(255, 0, 0, 0.75), 0 0 24px rgba(138, 43, 226, 0.55);
     }
 
     @keyframes pulseColor {
-      0%, 100% { color: #ff0000; }
-      50% { color: #8a2be2; }
+      0% { color: #ff0000; text-shadow: 0 0 12px rgba(255, 0, 0, 0.75), 0 0 24px rgba(255, 127, 0, 0.55); }
+      20% { color: #ff7f00; text-shadow: 0 0 12px rgba(255, 127, 0, 0.75), 0 0 24px rgba(255, 255, 0, 0.55); }
+      40% { color: #ffff00; text-shadow: 0 0 12px rgba(255, 255, 0, 0.75), 0 0 24px rgba(0, 255, 0, 0.55); }
+      60% { color: #0000ff; text-shadow: 0 0 12px rgba(0, 0, 255, 0.75), 0 0 24px rgba(138, 43, 226, 0.55); }
+      80% { color: #8a2be2; text-shadow: 0 0 12px rgba(138, 43, 226, 0.75), 0 0 24px rgba(255, 0, 255, 0.55); }
+      100% { color: #ff0000; text-shadow: 0 0 12px rgba(255, 0, 0, 0.75), 0 0 24px rgba(255, 127, 0, 0.55); }
     }
 
     .answer-display {
@@ -709,6 +713,14 @@
       });
     }
 
+    function playAudioOnce(url) {
+      const audio = new Audio(url);
+      audio.preload = 'auto';
+      audio.play().catch(function(err) {
+        console.log('audio play once failed:', err);
+      });
+    }
+
     function hideTopInputArea() {
       const inputArea = document.querySelector('.input-area');
       if (inputArea) {
@@ -1034,7 +1046,7 @@
       }
 
       function showAlternateAnswer(normalized) {
-        startSpecialAudioLoop(AUDIO_URL_20260703_WRONG);
+        playAudioOnce(AUDIO_URL_20260703_WRONG);
         answerRow.innerHTML = `<div class="answer-replacement">You answered ${normalized}.<br>So that's the best you could imagine???</div>`;
         messageEl.textContent = '';
       }

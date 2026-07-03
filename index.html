@@ -600,83 +600,87 @@
 
 <script>
   (function() {
-    function getNow() { return new Date(); }
-    function isAugust11(date) { return date.getMonth() === 7 && date.getDate() === 11; }
-    function isBefore20080811(date) { return date.getTime() < new Date(2008, 7, 11).getTime(); }
-    function get20080811Content() {
-      const now = getNow();
-      if (isBefore20080811(now)) return '...';
-      if (isAugust11(now)) return `This is someone's ${now.getFullYear() - 2008}th birthday.`;
-      return '...';
-    }
-
+    // ============================================================
+    // ★★★ 音频文件路径配置 ★★★
+    // ============================================================
     const AUDIO_URL_20260702 = '20260702.mp3';
     const AUDIO_URL_TEST_BGM = 'testentry.mp3';
     const AUDIO_URL_YELLOW = 'button1.mp3';
     const AUDIO_URL_20260703_CORRECT = 'YES!!!.mp3';
     const AUDIO_URL_20260703_WRONG = 'expl.mp3';
-    const AUDIO_URL_20260703_BGM = 'Noooo.mp3';  // 答题界面背景音乐
+    const AUDIO_URL_20260703_BGM = 'Noooo.mp3';
     const CLOUD_IMAGE_URL = 'testcloud.png';
     const EFFECT_PAUSE_DURATION = 4000;
+    const LOOP_END_OFFSET = 3;
 
-    const posts = {
-      '0': { id: '0', body: `The origin.\nSome say it's trivial; some say it's bizarre. In whichever way, we must proceed.` },
-      '1': { id: '1', body: `This marks the beginning of calculations.` },
-      '2': { id: '2', body: `This is the number of hands that a common human has.\nOnce we have moved from 1 to 2, it's quite easy to get other following results.` },
-      '-1': { id: '-1', body: `The other way.` },
-      'pi': { id: 'pi', body: `In a circle and its diameter, in series of integer powers, in elastic collisions, in trigonometry, ...\n... it's everywhere.` },
-      '9': { id: '9', body: `Ludwig van Beethoven's Symphony No. 9 in D minor, Op. 125, is a choral symphony, the final complete symphony by Beethoven, composed between 1822 and 1824. It was first performed in Vienna on 7 May 1824. The symphony is regarded by many critics and musicologists as Beethoven's greatest work and one of the supreme achievements in the history of music. One of the best-known works in common practice music, it stands as one of the most frequently performed symphonies in the world. The symphony was the first example of a major composer using voices in a symphony. The text is adapted from Friedrich Schiller's poem "Ode to Joy".` },
-      '18': { id: '18', body: `Shall I compare thee to a summer's day?\nThou art more lovely and more temperate:\nRough winds do shake the darling buds of May,\nAnd summer's lease hath all too short a date;\nSometime too hot the eye of heaven shines,\nAnd often is his gold complexion dimm'd;\nAnd every fair from fair sometime declines,\nBy chance or nature's changing course untrimm'd;\nBut thy eternal summer shall not fade,\nNor lose possession of that fair thou ow'st;\nNor shall death brag thou wander'st in his shade,\nWhen in eternal lines to time thou grow'st:\nSo long as men can breathe or eyes can see,\nSo long lives this, and this gives life to thee.` },
-      'i': { id: 'i', body: `The ninth Latin alphabet.\n... I choose not to make this one a maths reference. Otherwise what about j and k?` },
-      'I': { id: 'I', body: `Chances are you are an egotist.` },
-      '666': { id: '666', body: `Please retry.`, isRed: true },
-      '10': { id: '10', body: `We have reached the number of fingers that a common human has.\nHard to say whether good or not that is.` },
-      'e': { id: 'e', body: `$$\\frac{1}{0!} + \\frac{1}{1!} + \\frac{1}{2!} + \\cdots$$\n$$\\approx$$\n$$2.7182818284590452353602874713526624977572470936999595749669676277240766303535475945713821785251664274$$` },
-      '20150915': { id: '20150915', body: `... was when we witnessed the release of a really nice game.` },
+    function getNow() { return new Date(); }
+    function isAugust11(date) { return date.getMonth() === 7 && date.getDate() === 11; }
+    function isBefore20080811(date) { return date.getTime() < new Date(2008, 7, 11).getTime(); }
+    function get20080811Content() {
+      var now = getNow();
+      if (isBefore20080811(now)) return '...';
+      if (isAugust11(now)) return 'This is someone\'s ' + (now.getFullYear() - 2008) + 'th birthday.';
+      return '...';
+    }
+
+    var posts = {
+      '0': { id: '0', body: 'The origin.\nSome say it\'s trivial; some say it\'s bizarre. In whichever way, we must proceed.' },
+      '1': { id: '1', body: 'This marks the beginning of calculations.' },
+      '2': { id: '2', body: 'This is the number of hands that a common human has.\nOnce we have moved from 1 to 2, it\'s quite easy to get other following results.' },
+      '-1': { id: '-1', body: 'The other way.' },
+      'pi': { id: 'pi', body: 'In a circle and its diameter, in series of integer powers, in elastic collisions, in trigonometry, ...\n... it\'s everywhere.' },
+      '9': { id: '9', body: 'Ludwig van Beethoven\'s Symphony No. 9 in D minor, Op. 125, is a choral symphony, the final complete symphony by Beethoven, composed between 1822 and 1824. It was first performed in Vienna on 7 May 1824. The symphony is regarded by many critics and musicologists as Beethoven\'s greatest work and one of the supreme achievements in the history of music. One of the best-known works in common practice music, it stands as one of the most frequently performed symphonies in the world. The symphony was the first example of a major composer using voices in a symphony. The text is adapted from Friedrich Schiller\'s poem "Ode to Joy".' },
+      '18': { id: '18', body: 'Shall I compare thee to a summer\'s day?\nThou art more lovely and more temperate:\nRough winds do shake the darling buds of May,\nAnd summer\'s lease hath all too short a date;\nSometime too hot the eye of heaven shines,\nAnd often is his gold complexion dimm\'d;\nAnd every fair from fair sometime declines,\nBy chance or nature\'s changing course untrimm\'d;\nBut thy eternal summer shall not fade,\nNor lose possession of that fair thou ow\'st;\nNor shall death brag thou wander\'st in his shade,\nWhen in eternal lines to time thou grow\'st:\nSo long as men can breathe or eyes can see,\nSo long lives this, and this gives life to thee.' },
+      'i': { id: 'i', body: 'The ninth Latin alphabet.\n... I choose not to make this one a maths reference. Otherwise what about j and k?' },
+      'I': { id: 'I', body: 'Chances are you are an egotist.' },
+      '666': { id: '666', body: 'Please retry.', isRed: true },
+      '10': { id: '10', body: 'We have reached the number of fingers that a common human has.\nHard to say whether good or not that is.' },
+      'e': { id: 'e', body: '$$\\frac{1}{0!} + \\frac{1}{1!} + \\frac{1}{2!} + \\cdots$$\n$$\\approx$$\n$$2.7182818284590452353602874713526624977572470936999595749669676277240766303535475945713821785251664274$$' },
+      '20150915': { id: '20150915', body: '... was when we witnessed the release of a really nice game.' },
       '20080811': { id: '20080811', body: get20080811Content(), isDynamic: true },
       '19980829': { id: '19980829', body: '', isEmpty: true },
-      '1225': { id: '1225', body: `Don't forget.` },
-      'Klartsharr': { id: 'Klartsharr', body: `Oh, where did you get that name?` },
-      'klartsharr': { id: 'klartsharr', body: `Spell it into a Name, would you?` },
-      'KLARTSHARR': { id: 'KLARTSHARR', body: `STOP.` },
+      '1225': { id: '1225', body: 'Don\'t forget.' },
+      'Klartsharr': { id: 'Klartsharr', body: 'Oh, where did you get that name?' },
+      'klartsharr': { id: 'klartsharr', body: 'Spell it into a Name, would you?' },
+      'KLARTSHARR': { id: 'KLARTSHARR', body: 'STOP.' },
       '20260702': { id: '20260702', body: 'AUDIO_PLACEHOLDER', hasAudio: true, audioUrl: AUDIO_URL_20260702, audioTitle: 'Scarlet Forest', audioCredit: 'From DELTARUNE Chapter 1 by Toby Fox.' },
-      '20260616': { id: '20260616', body: `Piano Concerto in A Major\n\nThis concerto is dedicated to a most supportive friend of mine. Only with his calm, constant and heartfelt company could I conceive such peaceful melodies. Included in the Andante movement is a passage adapted from a very early prelude for piano solo of his, by which I first became acquainted with him during my last years of elementary school. Six years have passed since then, and I have graduated from high school. No word might possibly express the slightest of my gratitude for such a precious confidant, my dearest doctor of Mathematics who has always been with me in my teenage years.` },
+      '20260616': { id: '20260616', body: 'Piano Concerto in A Major\n\nThis concerto is dedicated to a most supportive friend of mine. Only with his calm, constant and heartfelt company could I conceive such peaceful melodies. Included in the Andante movement is a passage adapted from a very early prelude for piano solo of his, by which I first became acquainted with him during my last years of elementary school. Six years have passed since then, and I have graduated from high school. No word might possibly express the slightest of my gratitude for such a precious confidant, my dearest doctor of Mathematics who has always been with me in my teenage years.' },
       'testentry': { id: 'testentry', body: 'TEST_ENTRY_PLACEHOLDER', isTestEntry: true },
       '20260703': { id: '20260703', body: 'ANSWER_ENTRY_PLACEHOLDER', isAnswerEntry: true }
     };
 
-    const terminalContainer = document.getElementById('terminalContainer');
-    const initialInputArea = document.getElementById('initialInputArea');
-    const displayEl = document.getElementById('contentDisplay');
-    const inputEl = document.getElementById('contentIdInput');
-    const loadBtn = document.getElementById('loadBtn');
-    const randomBtn = document.getElementById('randomBtn');
-    const titleEl = document.getElementById('pageTitle');
-    const cloudContainer = document.getElementById('cloudContainer');
-    const cloudImg = document.getElementById('cloudImg');
-    const squareContainer = document.getElementById('squareContainer');
+    var terminalContainer = document.getElementById('terminalContainer');
+    var initialInputArea = document.getElementById('initialInputArea');
+    var displayEl = document.getElementById('contentDisplay');
+    var inputEl = document.getElementById('contentIdInput');
+    var loadBtn = document.getElementById('loadBtn');
+    var randomBtn = document.getElementById('randomBtn');
+    var titleEl = document.getElementById('pageTitle');
+    var cloudContainer = document.getElementById('cloudContainer');
+    var cloudImg = document.getElementById('cloudImg');
+    var squareContainer = document.getElementById('squareContainer');
 
-    let currentId = '';
-    let currentAudio = null;
-    let bgTimer = null;
-    let isBgWhite = false;
-    let squareInterval = null;
-    let isSquareRunning = false;
+    var currentId = '';
+    var currentAudio = null;
+    var bgTimer = null;
+    var isBgWhite = false;
+    var squareInterval = null;
+    var isSquareRunning = false;
     
-    let answerTimeout = null;
-    let answerAudio = null;
-    let isAnswerEffectActive = false;
+    var answerTimeout = null;
+    var answerAudio = null;
+    var isAnswerEffectActive = false;
 
-    let bgmAudio = null;
-    let isBgmPlaying = false;
-    let bgmResumeTimer = null;
-    let isBgmPausedForEffect = false;
+    var bgmAudio = null;
+    var isBgmPlaying = false;
+    var bgmResumeTimer = null;
+    var isBgmPausedForEffect = false;
 
-    let answerBgmAudio = null;
-    let isAnswerBgmPlaying = false;
+    var answerBgmAudio = null;
+    var isAnswerBgmPlaying = false;
 
     // ============================================================
-    // ★★★ 循环播放工具函数（简化可靠版本） ★★★
+    // ★★★ 循环播放工具函数 ★★★
     // ============================================================
     function createLoopedAudio(url, loopEndOffset) {
       var audio = new Audio(url);
@@ -699,7 +703,6 @@
       
       audio.addEventListener('loadedmetadata', setupLoop);
       
-      // 如果音频已经加载完成
       if (audio.readyState >= 1) {
         setupLoop();
       }
@@ -718,7 +721,6 @@
     function showInitialInput() {
       initialInputArea.classList.remove('hidden');
       initialInputArea.classList.remove('fade-in');
-      // 强制重排触发动画
       void initialInputArea.offsetWidth;
       initialInputArea.classList.add('fade-in');
     }
@@ -1177,7 +1179,8 @@
         showInitialInput();
         return;
       }
-      var found = posts.hasOwnProperty(raw) ? posts[raw] : null;
+      
+      var found = posts[raw];
       if (found) {
         stopAllAudio();
         
@@ -1244,7 +1247,7 @@
     }
 
     function refreshCurrentContent() {
-      if (currentId && posts.hasOwnProperty(currentId)) {
+      if (currentId && posts[currentId]) {
         var post = posts[currentId];
         if (post.isDynamic) {
           var html = renderPost(post, currentId);

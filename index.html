@@ -168,6 +168,84 @@
       background: #000000;
     }
 
+    .input-area.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+
+    .problem-text {
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+      line-height: 1.7;
+    }
+
+    .answer-input {
+      width: 120px;
+      background: transparent;
+      border: none;
+      border-bottom: 1px dotted #9b59b6;
+      padding: 6px 4px;
+      color: #9b59b6;
+      font-family: inherit;
+      font-size: 1.2rem;
+      outline: none;
+      caret-color: #9b59b6;
+      transition: border-color 0.2s ease;
+    }
+
+    .answer-input:focus {
+      border-bottom: 1px solid #9b59b6;
+    }
+
+    .answer-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.8rem;
+    }
+
+    .answer-replacement {
+      color: #9b59b6;
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+
+    .problem-message {
+      margin-top: 1rem;
+      font-size: 1.25rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .correct-message {
+      animation: pulseColor 2.5s ease-in-out infinite;
+      text-shadow: 0 0 10px rgba(255, 0, 0, 0.7), 0 0 20px rgba(138, 43, 226, 0.5);
+    }
+
+    @keyframes pulseColor {
+      0%, 100% { color: #ff0000; }
+      50% { color: #8a2be2; }
+    }
+
+    .answer-display {
+      margin-top: 0.8rem;
+      font-size: 1.2rem;
+    }
+
+    .hidden-element {
+      display: none !important;
+    }
+
+    .fade-in {
+      opacity: 1 !important;
+      transition: opacity 0.5s ease;
+    }
+
+    .faded-out {
+      opacity: 0 !important;
+    }
+
     .MathJax_SVG, .MathJax {
       color: #9b59b6 !important;
       fill: #9b59b6 !important;
@@ -522,8 +600,22 @@
     const AUDIO_URL_20260702 = '20260702.mp3';
     const AUDIO_URL_TEST_BGM = 'testentry.mp3';
     const AUDIO_URL_YELLOW = 'button1.mp3';
+    const AUDIO_URL_20260703_CORRECT = 'YES!!!.mp3';
+    const AUDIO_URL_20260703_WRONG = 'expl.mp3';
+    const AUDIO_URL_20260703_BGM = 'Noooo.mp3';  // 答题界面背景音乐
     const CLOUD_IMAGE_URL = 'testcloud.png';
     const EFFECT_PAUSE_DURATION = 4000;
+
+    let currentId = '';
+    let currentAudio = null;
+    let bgTimer = null;
+    let isBgWhite = false;
+    let squareInterval = null;
+    let isSquareRunning = false;
+    let specialAudio = null;
+    let specialAudioLoopHandler = null;
+    let problemEntryActive = false;
+    let topInputRestoreTimer = null;
 
     const posts = {
       '0': { id: '0', body: `The origin.\nSome say it's trivial; some say it's bizarre. In whichever way, we must proceed.` },
@@ -546,6 +638,7 @@
       'klartsharr': { id: 'klartsharr', body: `Spell it into a Name, would you?` },
       'KLARTSHARR': { id: 'KLARTSHARR', body: `STOP.` },
       '20260702': { id: '20260702', body: 'AUDIO_PLACEHOLDER', hasAudio: true, audioUrl: AUDIO_URL_20260702, audioTitle: 'Scarlet Forest', audioCredit: 'From DELTARUNE Chapter 1 by Toby Fox.' },
+      '20260703': { id: '20260703', body: 'PROBLEM_ENTRY_PLACEHOLDER', isProblemEntry: true },
       '20260616': { id: '20260616', body: `Piano Concerto in A Major\n\nThis concerto is dedicated to a most supportive friend of mine. Only with his calm, constant and heartfelt company could I conceive such peaceful melodies. Included in the Andante movement is a passage adapted from a very early prelude for piano solo of his, by which I first became acquainted with him during my last years of elementary school. Six years have passed since then, and I have graduated from high school. No word might possibly express the slightest of my gratitude for such a precious confidant, my dearest doctor of Mathematics who has always been with me in my teenage years.` },
       'testentry': { id: 'testentry', body: 'TEST_ENTRY_PLACEHOLDER', isTestEntry: true }
     };
@@ -559,13 +652,6 @@
     const cloudImg = document.getElementById('cloudImg');
     const squareContainer = document.getElementById('squareContainer');
 
-    let currentId = '';
-    let currentAudio = null;
-    let bgTimer = null;
-    let isBgWhite = false;
-    let squareInterval = null;
-    let isSquareRunning = false;
-    
     // ----- 背景音乐独立管理 -----
     let bgmAudio = null;
     let isBgmPlaying = false;
@@ -575,6 +661,15 @@
     // ============================================================
     // ★★★ 音频停止函数：停止所有正在播放的音频 ★★★
     // ============================================================
+    function stopSpecialAudio() {
+      if (specialAudio) {
+        specialAudio.pause();
+        specialAudio.removeEventListener('timeupdate', specialAudioLoopHandler);
+        specialAudio = null;
+      }
+      specialAudioLoopHandler = null;
+    }
+
     function stopAllAudio() {
       // 停止 20260702 的音频
       if (currentAudio) {
@@ -590,8 +685,77 @@
         isBgmPlaying = false;
         isBgmPausedForEffect = false;
       }
+      stopSpecialAudio();
       clearTimeout(bgmResumeTimer);
       bgmResumeTimer = null;
+    }
+
+    function startSpecialAudioLoop(url) {
+      stopSpecialAudio();
+      specialAudio = new Audio(url);
+      specialAudio.loop = false;
+      specialAudio.preload = 'auto';
+      function onTimeUpdate() {
+        if (!specialAudio || !specialAudio.duration || specialAudio.duration <= 3) return;
+        if (specialAudio.currentTime >= specialAudio.duration - 3) {
+          specialAudio.currentTime = 0;
+          specialAudio.play().catch(function(err) { console.log('special audio replay failed:', err); });
+        }
+      }
+      specialAudioLoopHandler = onTimeUpdate;
+      specialAudio.addEventListener('timeupdate', onTimeUpdate);
+      specialAudio.play().catch(function(err) {
+        console.log('special audio play failed:', err);
+      });
+    }
+
+    function hideTopInputArea() {
+      const inputArea = document.querySelector('.input-area');
+      if (inputArea) {
+        inputArea.classList.add('hidden');
+      }
+    }
+
+    function showTopInputArea() {
+      const inputArea = document.querySelector('.input-area');
+      if (inputArea) {
+        inputArea.classList.remove('hidden');
+      }
+    }
+
+    function resetToInitialState() {
+      stopAllAudio();
+      clearTimeout(bgTimer);
+      if (isBgWhite) {
+        document.body.classList.remove('bg-white');
+        isBgWhite = false;
+        stopSquares();
+      }
+      clearTimeout(topInputRestoreTimer);
+      topInputRestoreTimer = null;
+      problemEntryActive = false;
+      currentId = '';
+      titleEl.textContent = '';
+      displayEl.innerHTML = '';
+      inputEl.value = '';
+      showTopInputArea();
+    }
+
+    function scheduleTopInputRestore(delay) {
+      clearTimeout(topInputRestoreTimer);
+      topInputRestoreTimer = setTimeout(function() {
+        showTopInputArea();
+      }, delay);
+    }
+
+    function processResetCommand(value) {
+      const trimmed = String(value).trim();
+      if (!problemEntryActive) return false;
+      if (trimmed === '切换条目' || trimmed === '回到黑屏') {
+        resetToInitialState();
+        return true;
+      }
+      return false;
     }
 
     // ----- 黑色小方块：持续追加，不删除旧方块 -----
@@ -749,6 +913,15 @@
           <div id="testEntryResult"></div>
         </div>`;
       }
+      if (post.isProblemEntry) {
+        return `<div class="post-body">
+          <div class="problem-text">Let $PS$, $PT$ be two lines tangent to parabola $y^{2}=2px$ at two distinct points $S$ and $T$ which intersect at point $P$. Given that $|PS|=3$, $|PT|=4$, $|ST|=5$, we can calculate that $|p|=$</div>
+          <div class="answer-row" id="problemAnswerRow">
+            <input id="problemAnswerInput" class="answer-input" type="text" autocomplete="off">
+          </div>
+          <div id="problemMessage" class="problem-message"></div>
+        </div>`;
+      }
       let bodyText = post.isDynamic ? get20080811Content() : post.body;
       let bodyHtml = bodyText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>').replace(/  /g, '&nbsp;&nbsp;');
       if (post.isRed) bodyHtml = `<span class="red-text">${bodyHtml}</span>`;
@@ -842,6 +1015,58 @@
       }
     }
 
+    function bind20260703AnswerInput() {
+      const answerInput = document.getElementById('problemAnswerInput');
+      const answerRow = document.getElementById('problemAnswerRow');
+      const messageEl = document.getElementById('problemMessage');
+      if (!answerInput || !answerRow || !messageEl) return;
+
+      function showCorrectAnswer() {
+        document.body.classList.add('bg-white');
+        isBgWhite = true;
+        startSquares();
+        startSpecialAudioLoop(AUDIO_URL_20260703_CORRECT);
+        answerRow.innerHTML = `<span id="problemAnswerDisplay" class="answer-display">$$\\dfrac{288}{125}$$</span>`;
+        messageEl.innerHTML = `<span class="correct-message">THAT'S RIGHT! A REALLY BAD-LOOKING ANSWER!!!</span>`;
+        if (window.MathJax && MathJax.typesetPromise) {
+          MathJax.typesetPromise().catch(function(err) {});
+        }
+      }
+
+      function showAlternateAnswer(normalized) {
+        startSpecialAudioLoop(AUDIO_URL_20260703_WRONG);
+        answerRow.innerHTML = `<div class="answer-replacement">You answered ${normalized}.<br>So that's the best you could imagine???</div>`;
+        messageEl.textContent = '';
+      }
+
+      function handleProblemAnswer(value) {
+        const normalized = String(value).trim();
+        if (!normalized) return;
+
+        const correctSet = new Set(['\\dfrac{288}{125}', '288/125', '2.304']);
+        const alternateSet = new Set(['24/7','25/7','24/25','4/3','5/3','5/4','1','1.25','1.5','3/2','5/2','2','2.5','3','4']);
+
+        if (correctSet.has(normalized)) {
+          showCorrectAnswer();
+          scheduleTopInputRestore(5000);
+        } else if (alternateSet.has(normalized)) {
+          showAlternateAnswer(normalized);
+          scheduleTopInputRestore(5000);
+        } else {
+          resetToInitialState();
+        }
+      }
+
+      answerInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const value = answerInput.value;
+          if (processResetCommand(value)) return;
+          handleProblemAnswer(value);
+        }
+      });
+    }
+
     // ----- 加载内容 -----
     function loadContentById(id) {
       const raw = String(id);
@@ -875,6 +1100,12 @@
         }
         
         if (found.isEmpty) { displayEl.innerHTML = ''; return; }
+        currentId = raw;
+        if (found.isProblemEntry) {
+          problemEntryActive = true;
+        } else {
+          problemEntryActive = false;
+        }
         const html = renderPost(found, raw);
         if (html !== null && html !== '') {
           displayEl.innerHTML = html;
@@ -883,6 +1114,13 @@
             startBgm();
             bindTestEntryButtons();
             if (isBgWhite) startSquares();
+          }
+          if (found.isProblemEntry) {
+            hideTopInputArea();
+            startSpecialAudioLoop(AUDIO_URL_20260703_BGM);
+            bind20260703AnswerInput();
+          } else {
+            showTopInputArea();
           }
           if (window.MathJax && MathJax.typesetPromise) {
             MathJax.typesetPromise().catch(function(err) {});
@@ -976,6 +1214,12 @@
               stopSquares();
             }
             currentId = '';
+            return;
+          }
+          if (processResetCommand(trimmed)) {
+            return;
+          }
+          if (processResetCommand(trimmed)) {
             return;
           }
           loadContentById(val);

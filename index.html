@@ -167,13 +167,6 @@
     body.bg-white .square {
       background: #000000;
     }
-    body.bg-white .answer-input-area input {
-      color: #000000 !important;
-      border-bottom-color: #000000 !important;
-    }
-    body.bg-white .answer-input-area input:focus {
-      border-bottom-color: #000000 !important;
-    }
 
     .MathJax_SVG, .MathJax {
       color: #9b59b6 !important;
@@ -310,26 +303,12 @@
       display: none;
     }
 
-    /* 初始输入区域 - 用于选择条目 */
     .input-area {
       background: transparent;
       border: none;
       padding: 12px 0 16px 0;
       box-shadow: none;
       margin-bottom: 16px;
-      opacity: 1;
-      transition: opacity 0.6s ease;
-    }
-    .input-area.hidden {
-      display: none;
-    }
-    .input-area.fade-in {
-      animation: fadeIn 0.6s ease forwards;
-    }
-
-    @keyframes fadeIn {
-      0% { opacity: 0; }
-      100% { opacity: 1; }
     }
 
     .prompt-line {
@@ -465,69 +444,6 @@
       letter-spacing: 0.3px;
     }
 
-    /* 20260703 答案输入区 - 样式与初始横线相同 */
-    .answer-input-area {
-      margin-top: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .answer-input-area.hidden {
-      display: none;
-    }
-
-    .answer-input-area input {
-      background: transparent;
-      border: none;
-      padding: 4px 6px;
-      font-family: inherit;
-      font-size: 1.3rem;
-      width: 160px;
-      color: #9b59b6;
-      text-align: left;
-      outline: none;
-      box-shadow: none;
-      caret-color: #9b59b6;
-      border-bottom: 1px dotted #9b59b6;
-      border-radius: 0;
-      letter-spacing: 0.5px;
-      transition: border-color 0.1s;
-    }
-
-    .answer-input-area input:focus {
-      border-bottom: 1px solid #9b59b6;
-    }
-
-    /* 正确答案特效文字 */
-    .correct-answer-text {
-      font-size: 2rem;
-      font-weight: bold;
-      margin-top: 20px;
-      animation: colorPulse 0.8s ease-in-out infinite alternate;
-      text-shadow: 0 0 20px #9b59b6, 0 0 40px #9b59b6, 0 0 60px #9b59b6;
-      transition: text-shadow 0.3s;
-    }
-
-    @keyframes colorPulse {
-      0% { color: #ff0000; text-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000, 0 0 60px #ff0000; }
-      100% { color: #9b59b6; text-shadow: 0 0 20px #9b59b6, 0 0 40px #9b59b6, 0 0 60px #9b59b6; }
-    }
-
-    .wrong-answer-text {
-      font-size: 1.5rem;
-      font-weight: bold;
-      margin-top: 16px;
-      color: #9b59b6;
-    }
-
-    .answer-display {
-      font-size: 1.5rem;
-      font-weight: bold;
-      margin-top: 12px;
-      color: #9b59b6;
-    }
-
     @media (max-width: 560px) {
       .terminal {
         padding: 16px 12px;
@@ -551,13 +467,6 @@
         width: 34px;
         height: 34px;
       }
-      .answer-input-area input {
-        width: 120px;
-        font-size: 1.1rem;
-      }
-      .correct-answer-text {
-        font-size: 1.2rem;
-      }
     }
 
     ::-webkit-scrollbar {
@@ -577,8 +486,8 @@
 <body>
 <div id="squareContainer" class="square-container"></div>
 
-<div class="terminal" id="terminalContainer">
-  <div class="input-area" id="initialInputArea">
+<div class="terminal">
+  <div class="input-area">
     <div class="prompt-line">
       <span class="prompt-symbol"></span>
       <span class="prompt-text"></span>
@@ -600,182 +509,117 @@
 
 <script>
   (function() {
-    // ============================================================
-    // ★★★ 音频文件路径配置 ★★★
-    // ============================================================
-    const AUDIO_URL_20260702 = '20260702.mp3';
-    const AUDIO_URL_TEST_BGM = 'testentry.mp3';
-    const AUDIO_URL_YELLOW = 'button1.mp3';
-    const AUDIO_URL_20260703_CORRECT = 'YES!!!.mp3';
-    const AUDIO_URL_20260703_WRONG = 'expl.mp3';
-    const AUDIO_URL_20260703_BGM = 'Noooo.mp3';
-    const CLOUD_IMAGE_URL = 'testcloud.png';
-    const EFFECT_PAUSE_DURATION = 4000;
-    const LOOP_END_OFFSET = 3;
-
     function getNow() { return new Date(); }
     function isAugust11(date) { return date.getMonth() === 7 && date.getDate() === 11; }
     function isBefore20080811(date) { return date.getTime() < new Date(2008, 7, 11).getTime(); }
     function get20080811Content() {
-      var now = getNow();
+      const now = getNow();
       if (isBefore20080811(now)) return '...';
-      if (isAugust11(now)) return 'This is someone\'s ' + (now.getFullYear() - 2008) + 'th birthday.';
+      if (isAugust11(now)) return `This is someone's ${now.getFullYear() - 2008}th birthday.`;
       return '...';
     }
 
-    var posts = {
-      '0': { id: '0', body: 'The origin.\nSome say it\'s trivial; some say it\'s bizarre. In whichever way, we must proceed.' },
-      '1': { id: '1', body: 'This marks the beginning of calculations.' },
-      '2': { id: '2', body: 'This is the number of hands that a common human has.\nOnce we have moved from 1 to 2, it\'s quite easy to get other following results.' },
-      '-1': { id: '-1', body: 'The other way.' },
-      'pi': { id: 'pi', body: 'In a circle and its diameter, in series of integer powers, in elastic collisions, in trigonometry, ...\n... it\'s everywhere.' },
-      '9': { id: '9', body: 'Ludwig van Beethoven\'s Symphony No. 9 in D minor, Op. 125, is a choral symphony, the final complete symphony by Beethoven, composed between 1822 and 1824. It was first performed in Vienna on 7 May 1824. The symphony is regarded by many critics and musicologists as Beethoven\'s greatest work and one of the supreme achievements in the history of music. One of the best-known works in common practice music, it stands as one of the most frequently performed symphonies in the world. The symphony was the first example of a major composer using voices in a symphony. The text is adapted from Friedrich Schiller\'s poem "Ode to Joy".' },
-      '18': { id: '18', body: 'Shall I compare thee to a summer\'s day?\nThou art more lovely and more temperate:\nRough winds do shake the darling buds of May,\nAnd summer\'s lease hath all too short a date;\nSometime too hot the eye of heaven shines,\nAnd often is his gold complexion dimm\'d;\nAnd every fair from fair sometime declines,\nBy chance or nature\'s changing course untrimm\'d;\nBut thy eternal summer shall not fade,\nNor lose possession of that fair thou ow\'st;\nNor shall death brag thou wander\'st in his shade,\nWhen in eternal lines to time thou grow\'st:\nSo long as men can breathe or eyes can see,\nSo long lives this, and this gives life to thee.' },
-      'i': { id: 'i', body: 'The ninth Latin alphabet.\n... I choose not to make this one a maths reference. Otherwise what about j and k?' },
-      'I': { id: 'I', body: 'Chances are you are an egotist.' },
-      '666': { id: '666', body: 'Please retry.', isRed: true },
-      '10': { id: '10', body: 'We have reached the number of fingers that a common human has.\nHard to say whether good or not that is.' },
-      'e': { id: 'e', body: '$$\\frac{1}{0!} + \\frac{1}{1!} + \\frac{1}{2!} + \\cdots$$\n$$\\approx$$\n$$2.7182818284590452353602874713526624977572470936999595749669676277240766303535475945713821785251664274$$' },
-      '20150915': { id: '20150915', body: '... was when we witnessed the release of a really nice game.' },
+    const AUDIO_URL_20260702 = '20260702.mp3';
+    const AUDIO_URL_TEST_BGM = 'testentry.mp3';
+    const AUDIO_URL_YELLOW = 'button1.mp3';
+    const CLOUD_IMAGE_URL = 'testcloud.png';
+    const EFFECT_PAUSE_DURATION = 4000;
+
+    const posts = {
+      '0': { id: '0', body: `The origin.\nSome say it's trivial; some say it's bizarre. In whichever way, we must proceed.` },
+      '1': { id: '1', body: `This marks the beginning of calculations.` },
+      '2': { id: '2', body: `This is the number of hands that a common human has.\nOnce we have moved from 1 to 2, it's quite easy to get other following results.` },
+      '-1': { id: '-1', body: `The other way.` },
+      'pi': { id: 'pi', body: `In a circle and its diameter, in series of integer powers, in elastic collisions, in trigonometry, ...\n... it's everywhere.` },
+      '9': { id: '9', body: `Ludwig van Beethoven's Symphony No. 9 in D minor, Op. 125, is a choral symphony, the final complete symphony by Beethoven, composed between 1822 and 1824. It was first performed in Vienna on 7 May 1824. The symphony is regarded by many critics and musicologists as Beethoven's greatest work and one of the supreme achievements in the history of music. One of the best-known works in common practice music, it stands as one of the most frequently performed symphonies in the world. The symphony was the first example of a major composer using voices in a symphony. The text is adapted from Friedrich Schiller's poem "Ode to Joy".` },
+      '18': { id: '18', body: `Shall I compare thee to a summer's day?\nThou art more lovely and more temperate:\nRough winds do shake the darling buds of May,\nAnd summer's lease hath all too short a date;\nSometime too hot the eye of heaven shines,\nAnd often is his gold complexion dimm'd;\nAnd every fair from fair sometime declines,\nBy chance or nature's changing course untrimm'd;\nBut thy eternal summer shall not fade,\nNor lose possession of that fair thou ow'st;\nNor shall death brag thou wander'st in his shade,\nWhen in eternal lines to time thou grow'st:\nSo long as men can breathe or eyes can see,\nSo long lives this, and this gives life to thee.` },
+      'i': { id: 'i', body: `The ninth Latin alphabet.\n... I choose not to make this one a maths reference. Otherwise what about j and k?` },
+      'I': { id: 'I', body: `Chances are you are an egotist.` },
+      '666': { id: '666', body: `Please retry.`, isRed: true },
+      '10': { id: '10', body: `We have reached the number of fingers that a common human has.\nHard to say whether good or not that is.` },
+      'e': { id: 'e', body: `$$\\frac{1}{0!} + \\frac{1}{1!} + \\frac{1}{2!} + \\cdots$$\n$$\\approx$$\n$$2.7182818284590452353602874713526624977572470936999595749669676277240766303535475945713821785251664274$$` },
+      '20150915': { id: '20150915', body: `... was when we witnessed the release of a really nice game.` },
       '20080811': { id: '20080811', body: get20080811Content(), isDynamic: true },
       '19980829': { id: '19980829', body: '', isEmpty: true },
-      '1225': { id: '1225', body: 'Don\'t forget.' },
-      'Klartsharr': { id: 'Klartsharr', body: 'Oh, where did you get that name?' },
-      'klartsharr': { id: 'klartsharr', body: 'Spell it into a Name, would you?' },
-      'KLARTSHARR': { id: 'KLARTSHARR', body: 'STOP.' },
+      '1225': { id: '1225', body: `Don't forget.` },
+      'Klartsharr': { id: 'Klartsharr', body: `Oh, where did you get that name?` },
+      'klartsharr': { id: 'klartsharr', body: `Spell it into a Name, would you?` },
+      'KLARTSHARR': { id: 'KLARTSHARR', body: `STOP.` },
       '20260702': { id: '20260702', body: 'AUDIO_PLACEHOLDER', hasAudio: true, audioUrl: AUDIO_URL_20260702, audioTitle: 'Scarlet Forest', audioCredit: 'From DELTARUNE Chapter 1 by Toby Fox.' },
-      '20260616': { id: '20260616', body: 'Piano Concerto in A Major\n\nThis concerto is dedicated to a most supportive friend of mine. Only with his calm, constant and heartfelt company could I conceive such peaceful melodies. Included in the Andante movement is a passage adapted from a very early prelude for piano solo of his, by which I first became acquainted with him during my last years of elementary school. Six years have passed since then, and I have graduated from high school. No word might possibly express the slightest of my gratitude for such a precious confidant, my dearest doctor of Mathematics who has always been with me in my teenage years.' },
-      'testentry': { id: 'testentry', body: 'TEST_ENTRY_PLACEHOLDER', isTestEntry: true },
-      '20260703': { id: '20260703', body: 'ANSWER_ENTRY_PLACEHOLDER', isAnswerEntry: true }
+      '20260616': { id: '20260616', body: `Piano Concerto in A Major\n\nThis concerto is dedicated to a most supportive friend of mine. Only with his calm, constant and heartfelt company could I conceive such peaceful melodies. Included in the Andante movement is a passage adapted from a very early prelude for piano solo of his, by which I first became acquainted with him during my last years of elementary school. Six years have passed since then, and I have graduated from high school. No word might possibly express the slightest of my gratitude for such a precious confidant, my dearest doctor of Mathematics who has always been with me in my teenage years.` },
+      'testentry': { id: 'testentry', body: 'TEST_ENTRY_PLACEHOLDER', isTestEntry: true }
     };
 
-    var terminalContainer = document.getElementById('terminalContainer');
-    var initialInputArea = document.getElementById('initialInputArea');
-    var displayEl = document.getElementById('contentDisplay');
-    var inputEl = document.getElementById('contentIdInput');
-    var loadBtn = document.getElementById('loadBtn');
-    var randomBtn = document.getElementById('randomBtn');
-    var titleEl = document.getElementById('pageTitle');
-    var cloudContainer = document.getElementById('cloudContainer');
-    var cloudImg = document.getElementById('cloudImg');
-    var squareContainer = document.getElementById('squareContainer');
+    const displayEl = document.getElementById('contentDisplay');
+    const inputEl = document.getElementById('contentIdInput');
+    const loadBtn = document.getElementById('loadBtn');
+    const randomBtn = document.getElementById('randomBtn');
+    const titleEl = document.getElementById('pageTitle');
+    const cloudContainer = document.getElementById('cloudContainer');
+    const cloudImg = document.getElementById('cloudImg');
+    const squareContainer = document.getElementById('squareContainer');
 
-    var currentId = '';
-    var currentAudio = null;
-    var bgTimer = null;
-    var isBgWhite = false;
-    var squareInterval = null;
-    var isSquareRunning = false;
+    let currentId = '';
+    let currentAudio = null;
+    let bgTimer = null;
+    let isBgWhite = false;
+    let squareInterval = null;
+    let isSquareRunning = false;
     
-    var answerTimeout = null;
-    var answerAudio = null;
-    var isAnswerEffectActive = false;
-
-    var bgmAudio = null;
-    var isBgmPlaying = false;
-    var bgmResumeTimer = null;
-    var isBgmPausedForEffect = false;
-
-    var answerBgmAudio = null;
-    var isAnswerBgmPlaying = false;
+    // ----- 背景音乐独立管理 -----
+    let bgmAudio = null;
+    let isBgmPlaying = false;
+    let bgmResumeTimer = null;
+    let isBgmPausedForEffect = false;  // 标记是否因按钮效果而暂停
 
     // ============================================================
-    // ★★★ 循环播放工具函数 ★★★
-    // ============================================================
-    function createLoopedAudio(url, loopEndOffset) {
-      var audio = new Audio(url);
-      var isLoopSetup = false;
-      
-      function setupLoop() {
-        if (isLoopSetup) return;
-        var duration = audio.duration;
-        if (duration > loopEndOffset && isFinite(duration)) {
-          isLoopSetup = true;
-          var loopEnd = duration - loopEndOffset;
-          audio.addEventListener('timeupdate', function onTimeUpdate() {
-            if (audio.currentTime >= loopEnd) {
-              audio.currentTime = 0;
-              audio.play().catch(function() {});
-            }
-          });
-        }
-      }
-      
-      audio.addEventListener('loadedmetadata', setupLoop);
-      
-      if (audio.readyState >= 1) {
-        setupLoop();
-      }
-      
-      return audio;
-    }
-
-    // ============================================================
-    // ★★★ 初始横线显示/隐藏控制 ★★★
-    // ============================================================
-    function hideInitialInput() {
-      initialInputArea.classList.add('hidden');
-      initialInputArea.classList.remove('fade-in');
-    }
-
-    function showInitialInput() {
-      initialInputArea.classList.remove('hidden');
-      initialInputArea.classList.remove('fade-in');
-      void initialInputArea.offsetWidth;
-      initialInputArea.classList.add('fade-in');
-    }
-
-    // ============================================================
-    // ★★★ 音频停止函数 ★★★
+    // ★★★ 音频停止函数：停止所有正在播放的音频 ★★★
     // ============================================================
     function stopAllAudio() {
+      // 停止 20260702 的音频
       if (currentAudio) {
-        try { currentAudio.pause(); } catch(e) {}
+        currentAudio.pause();
         currentAudio = null;
-        var infoEl = document.getElementById('audioInfo');
+        const infoEl = document.getElementById('audioInfo');
         if (infoEl) infoEl.classList.remove('playing');
       }
+      // 停止 testentry 的背景音乐
       if (bgmAudio) {
-        try { bgmAudio.pause(); } catch(e) {}
+        bgmAudio.pause();
         bgmAudio = null;
         isBgmPlaying = false;
         isBgmPausedForEffect = false;
       }
       clearTimeout(bgmResumeTimer);
       bgmResumeTimer = null;
-      if (answerAudio) {
-        try { answerAudio.pause(); } catch(e) {}
-        answerAudio = null;
-      }
-      clearTimeout(answerTimeout);
-      answerTimeout = null;
-      if (answerBgmAudio) {
-        try { answerBgmAudio.pause(); } catch(e) {}
-        answerBgmAudio = null;
-        isAnswerBgmPlaying = false;
-      }
     }
 
-    // ----- 黑色小方块 -----
+    // ----- 黑色小方块：持续追加，不删除旧方块 -----
     function addSquareBatch() {
       if (!isSquareRunning) return;
-      var container = squareContainer;
-      var count = 15 + Math.floor(Math.random() * 15);
-      for (var i = 0; i < count; i++) {
-        var square = document.createElement('div');
+      
+      const container = squareContainer;
+      const count = 15 + Math.floor(Math.random() * 15);
+      
+      for (let i = 0; i < count; i++) {
+        const square = document.createElement('div');
         square.className = 'square';
-        var startX = Math.random() * 90;
-        var startY = Math.random() * 90;
+        
+        const startX = Math.random() * 90;
+        const startY = Math.random() * 90;
         square.style.left = startX + '%';
         square.style.top = startY + '%';
-        var targetX = (100 - startX) * 0.8 + 10;
-        var targetY = (100 - startY) * 0.8 + 10;
+        
+        const targetX = (100 - startX) * 0.8 + 10;
+        const targetY = (100 - startY) * 0.8 + 10;
         square.style.setProperty('--tx', targetX + 'vw');
         square.style.setProperty('--ty', targetY + 'vh');
+        
         square.style.setProperty('--delay', (Math.random() * 0.8) + 's');
-        var size = 4 + Math.random() * 10;
+        const size = 4 + Math.random() * 10;
         square.style.setProperty('--size', size + 'px');
         square.style.setProperty('--duration', (3 + Math.random() * 3) + 's');
+        
         container.appendChild(square);
       }
     }
@@ -785,9 +629,12 @@
       isSquareRunning = true;
       squareContainer.innerHTML = '';
       squareContainer.classList.add('active');
+      
       addSquareBatch();
       squareInterval = setInterval(function() {
-        if (isSquareRunning) addSquareBatch();
+        if (isSquareRunning) {
+          addSquareBatch();
+        }
       }, 1500);
     }
 
@@ -799,11 +646,13 @@
       }
       squareContainer.classList.remove('active');
       setTimeout(function() {
-        if (!isSquareRunning) squareContainer.innerHTML = '';
+        if (!isSquareRunning) {
+          squareContainer.innerHTML = '';
+        }
       }, 8000);
     }
 
-    // ----- 背景变白 -----
+    // ----- 背景变白（只在 testentry 中生效） -----
     function startBgTimer() {
       clearTimeout(bgTimer);
       bgTimer = setTimeout(function() {
@@ -822,17 +671,20 @@
         isBgWhite = false;
         stopSquares();
       }
-      if (currentId === 'testentry') startBgTimer();
+      if (currentId === 'testentry') {
+        startBgTimer();
+      }
     }
 
-    // ----- testentry 背景音乐控制 -----
+    // ----- 背景音乐控制（仅 testentry） -----
     function startBgm() {
       clearTimeout(bgmResumeTimer);
       if (bgmAudio) { 
-        try { bgmAudio.pause(); } catch(e) {}
+        bgmAudio.pause(); 
         bgmAudio = null; 
       }
-      bgmAudio = createLoopedAudio(AUDIO_URL_TEST_BGM, LOOP_END_OFFSET);
+      bgmAudio = new Audio(AUDIO_URL_TEST_BGM);
+      bgmAudio.loop = true;
       bgmAudio.play().catch(function(err) { 
         console.log('背景音乐播放失败:', err); 
       });
@@ -840,14 +692,16 @@
       isBgmPausedForEffect = false;
     }
 
+    // 暂停背景音乐（用于按钮效果）
     function pauseBgmForEffect() {
       if (!bgmAudio || !isBgmPlaying) return;
       clearTimeout(bgmResumeTimer);
-      try { bgmAudio.pause(); } catch(e) {}
+      bgmAudio.pause();
       isBgmPlaying = false;
       isBgmPausedForEffect = true;
     }
 
+    // 恢复背景音乐（按钮效果结束后调用）
     function resumeBgmAfterEffect() {
       clearTimeout(bgmResumeTimer);
       if (bgmAudio && !isBgmPlaying && isBgmPausedForEffect) {
@@ -856,166 +710,18 @@
         });
         isBgmPlaying = true;
         isBgmPausedForEffect = false;
-      } else if (!bgmAudio) { 
-        startBgm(); 
+      } else if (!bgmAudio) {
+        startBgm();
       }
     }
 
+    // 按钮效果统一处理：暂停背景音乐，延迟后恢复
     function handleButtonEffect() {
       pauseBgmForEffect();
       clearTimeout(bgmResumeTimer);
-      bgmResumeTimer = setTimeout(function() { resumeBgmAfterEffect(); }, EFFECT_PAUSE_DURATION);
-    }
-
-    // ----- 答题界面背景音乐控制 -----
-    function startAnswerBgm() {
-      if (answerBgmAudio) {
-        try { answerBgmAudio.pause(); } catch(e) {}
-        answerBgmAudio = null;
-      }
-      answerBgmAudio = createLoopedAudio(AUDIO_URL_20260703_BGM, LOOP_END_OFFSET);
-      answerBgmAudio.play().catch(function(err) { 
-        console.log('答题界面背景音乐播放失败:', err); 
-      });
-      isAnswerBgmPlaying = true;
-    }
-
-    function stopAnswerBgm() {
-      if (answerBgmAudio) {
-        try { answerBgmAudio.pause(); } catch(e) {}
-        answerBgmAudio = null;
-        isAnswerBgmPlaying = false;
-      }
-    }
-
-    // ============================================================
-    // ★★★ 20260703 答案验证逻辑 ★★★
-    // ============================================================
-    var CORRECT_ANSWERS = ['\\dfrac{288}{125}', '288/125', '2.304'];
-    var WRONG_ANSWERS = ['24/7', '25/7', '24/25', '4/3', '5/3', '5/4', '1', '1.25', '1.5', '3/2', '5/2', '2', '2.5', '3', '4'];
-
-    function checkAnswer(inputVal) {
-      var trimmed = inputVal.trim();
-      if (trimmed === '') return;
-      
-      if (CORRECT_ANSWERS.indexOf(trimmed) !== -1) {
-        triggerCorrectAnswer();
-        return;
-      }
-      
-      if (WRONG_ANSWERS.indexOf(trimmed) !== -1) {
-        triggerWrongAnswer();
-        return;
-      }
-      
-      resetToInitialState();
-    }
-
-    function resetToInitialState() {
-      if (answerAudio) {
-        try { answerAudio.pause(); } catch(e) {}
-        answerAudio = null;
-      }
-      clearTimeout(answerTimeout);
-      answerTimeout = null;
-      
-      displayEl.innerHTML = '';
-      showInitialInput();
-      
-      if (isBgWhite) {
-        document.body.classList.remove('bg-white');
-        isBgWhite = false;
-        stopSquares();
-      }
-      
-      isAnswerEffectActive = false;
-      stopAnswerBgm();
-    }
-
-    function triggerCorrectAnswer() {
-      clearAnswerEffects();
-      
-      isAnswerEffectActive = true;
-      
-      stopAnswerBgm();
-      
-      answerAudio = createLoopedAudio(AUDIO_URL_20260703_CORRECT, LOOP_END_OFFSET);
-      answerAudio.play().catch(function(err) { 
-        console.log('正确答案音乐播放失败:', err); 
-      });
-      
-      document.body.classList.add('bg-white');
-      isBgWhite = true;
-      startSquares();
-      
-      var answerArea = document.querySelector('.answer-input-area');
-      if (answerArea) {
-        answerArea.classList.add('hidden');
-      }
-      
-      var displayDiv = document.getElementById('answerDisplay');
-      if (displayDiv) {
-        displayDiv.innerHTML = '$$\\dfrac{288}{125}$$';
-        if (window.MathJax && MathJax.typesetPromise) {
-          MathJax.typesetPromise().catch(function(err) {});
-        }
-      }
-      
-      var resultDiv = document.getElementById('answerResult');
-      if (resultDiv) {
-        resultDiv.innerHTML = '<div class="correct-answer-text">THAT\'S RIGHT! A REALLY BAD-LOOKING ANSWER!!!</div>';
-      }
-      
-      clearTimeout(answerTimeout);
-      answerTimeout = setTimeout(function() {
-        if (currentId === '20260703') {
-          showInitialInput();
-        }
-      }, 5000);
-    }
-
-    function triggerWrongAnswer() {
-      clearAnswerEffects();
-      
-      isAnswerEffectActive = true;
-      
-      stopAnswerBgm();
-      
-      answerAudio = new Audio(AUDIO_URL_20260703_WRONG);
-      answerAudio.play().catch(function(err) { 
-        console.log('错误答案音效播放失败:', err); 
-      });
-      
-      var answerArea = document.querySelector('.answer-input-area');
-      if (answerArea) {
-        answerArea.classList.add('hidden');
-      }
-      
-      var resultDiv = document.getElementById('answerResult');
-      if (resultDiv) {
-        resultDiv.innerHTML = '<div class="wrong-answer-text">So that\'s the best you could imagine???</div>';
-      }
-      
-      clearTimeout(answerTimeout);
-      answerTimeout = setTimeout(function() {
-        if (currentId === '20260703') {
-          showInitialInput();
-        }
-      }, 5000);
-    }
-
-    function clearAnswerEffects() {
-      if (answerAudio) {
-        try { answerAudio.pause(); } catch(e) {}
-        answerAudio = null;
-      }
-      clearTimeout(answerTimeout);
-      answerTimeout = null;
-      
-      var resultDiv = document.getElementById('answerResult');
-      if (resultDiv) resultDiv.innerHTML = '';
-      
-      isAnswerEffectActive = false;
+      bgmResumeTimer = setTimeout(function() {
+        resumeBgmAfterEffect();
+      }, EFFECT_PAUSE_DURATION);
     }
 
     // ----- 渲染 -----
@@ -1023,58 +729,48 @@
       if (!post) return null;
       if (post.isEmpty) return '';
       if (post.hasAudio) {
-        return '<div class="post-body">' +
-          '<button id="playAudioBtn" class="audio-btn"></button>' +
-          '<div id="audioInfo" class="audio-info">' +
-          '<div class="audio-title">' + post.audioTitle + '</div>' +
-          '<div class="audio-credit">' + post.audioCredit + '</div>' +
-          '</div></div>';
+        return `<div class="post-body">
+          <button id="playAudioBtn" class="audio-btn"></button>
+          <div id="audioInfo" class="audio-info">
+            <div class="audio-title">${post.audioTitle}</div>
+            <div class="audio-credit">${post.audioCredit}</div>
+          </div>
+        </div>`;
       }
       if (post.isTestEntry) {
-        return '<div class="post-body">' +
-          '<div>This is a test entry. Feel free to activate the buttons, and everything else...</div>' +
-          '<div class="black-text">... including this.</div>' +
-          '<div class="color-buttons">' +
-          '<button class="color-btn color-btn-red" data-color="red"></button>' +
-          '<button class="color-btn color-btn-yellow" data-color="yellow"></button>' +
-          '<button class="color-btn color-btn-blue" data-color="blue"></button>' +
-          '</div>' +
-          '<div id="testEntryResult"></div>' +
-          '</div>';
+        return `<div class="post-body">
+          <div>This is a test entry. Feel free to activate the buttons, and everything else...</div>
+          <div class="black-text">... including this.</div>
+          <div class="color-buttons">
+            <button class="color-btn color-btn-red" data-color="red"></button>
+            <button class="color-btn color-btn-yellow" data-color="yellow"></button>
+            <button class="color-btn color-btn-blue" data-color="blue"></button>
+          </div>
+          <div id="testEntryResult"></div>
+        </div>`;
       }
-      if (post.isAnswerEntry) {
-        hideInitialInput();
-        startAnswerBgm();
-        return '<div class="post-body">' +
-          '<div>Let $PS$, $PT$ be two lines tangent to parabola $y^{2}=2px$ at two distinct points $S$ and $T$ which intersect at point $P$. Given that $\\left|PS\\right|=3$, $\\left|PT\\right|=4$, $\\left|ST\\right|=5$, we can calculate that $\\left|p\\right|=$</div>' +
-          '<div id="answerDisplay"></div>' +
-          '<div id="answerResult"></div>' +
-          '<div class="answer-input-area">' +
-          '<input type="text" id="answerInput" placeholder="" maxlength="30" spellcheck="false">' +
-          '</div></div>';
-      }
-      var bodyText = post.isDynamic ? get20080811Content() : post.body;
-      var bodyHtml = bodyText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>').replace(/  /g, '&nbsp;&nbsp;');
-      if (post.isRed) bodyHtml = '<span class="red-text">' + bodyHtml + '</span>';
-      return '<div class="post-body">' + bodyHtml + '</div>';
+      let bodyText = post.isDynamic ? get20080811Content() : post.body;
+      let bodyHtml = bodyText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>').replace(/  /g, '&nbsp;&nbsp;');
+      if (post.isRed) bodyHtml = `<span class="red-text">${bodyHtml}</span>`;
+      return `<div class="post-body">${bodyHtml}</div>`;
     }
 
     function bindAudioButton(post) {
       if (!post || !post.hasAudio) return;
-      var btn = document.getElementById('playAudioBtn');
-      var infoEl = document.getElementById('audioInfo');
+      const btn = document.getElementById('playAudioBtn');
+      const infoEl = document.getElementById('audioInfo');
       if (btn) {
-        var newBtn = btn.cloneNode(true);
+        const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
         newBtn.addEventListener('click', function(e) {
           e.stopPropagation();
           if (currentAudio) {
-            try { currentAudio.pause(); } catch(e) {}
+            currentAudio.pause();
             currentAudio = null;
             if (infoEl) infoEl.classList.remove('playing');
             return;
           }
-          var audio = new Audio(post.audioUrl);
+          const audio = new Audio(post.audioUrl);
           currentAudio = audio;
           if (infoEl) infoEl.classList.add('playing');
           audio.play().then(function() {
@@ -1091,35 +787,16 @@
       }
     }
 
-    function bindAnswerEntry() {
-      var inputField = document.getElementById('answerInput');
-      if (!inputField) return;
-      
-      function handleSubmit() {
-        var val = inputField.value;
-        checkAnswer(val);
-      }
-      
-      inputField.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          handleSubmit();
-        }
-      });
-      
-      inputField.addEventListener('focus', function() { this.select(); });
-    }
-
     function bindTestEntryButtons() {
-      var redBtn = document.querySelector('.color-btn-red');
-      var yellowBtn = document.querySelector('.color-btn-yellow');
-      var blueBtn = document.querySelector('.color-btn-blue');
-      var resultEl = document.getElementById('testEntryResult');
-      var redTextElement = null;
+      const redBtn = document.querySelector('.color-btn-red');
+      const yellowBtn = document.querySelector('.color-btn-yellow');
+      const blueBtn = document.querySelector('.color-btn-blue');
+      const resultEl = document.getElementById('testEntryResult');
+      let redTextElement = null;
 
       function clearOtherEffects(keepColor) {
         if (keepColor !== 'red') {
-          var redText = resultEl.querySelector('.red-text-result');
+          const redText = resultEl.querySelector('.red-text-result');
           if (redText) { redText.remove(); redTextElement = null; }
         }
         if (keepColor !== 'blue') cloudContainer.classList.remove('show');
@@ -1128,18 +805,20 @@
       if (redBtn) {
         redBtn.addEventListener('click', function() {
           clearOtherEffects('red');
-          var existingRed = resultEl.querySelector('.red-text-result');
+          const existingRed = resultEl.querySelector('.red-text-result');
           if (existingRed) {
             existingRed.remove();
             redTextElement = null;
+            // 移除文字时立即恢复背景音乐
             clearTimeout(bgmResumeTimer);
             resumeBgmAfterEffect();
           } else {
-            var div = document.createElement('div');
+            const div = document.createElement('div');
             div.className = 'red-text red-text-result';
             div.textContent = 'My apologies to all of these.';
             resultEl.appendChild(div);
             redTextElement = div;
+            // 统一处理按钮效果
             handleButtonEffect();
           }
         });
@@ -1147,7 +826,7 @@
       if (yellowBtn) {
         yellowBtn.addEventListener('click', function() {
           clearOtherEffects('yellow');
-          var audio = new Audio(AUDIO_URL_YELLOW);
+          const audio = new Audio(AUDIO_URL_YELLOW);
           audio.play().catch(function(err) { console.log('黄色音效播放失败:', err); });
           handleButtonEffect();
         });
@@ -1165,7 +844,7 @@
 
     // ----- 加载内容 -----
     function loadContentById(id) {
-      var raw = String(id);
+      const raw = String(id);
       if (raw === '') {
         inputEl.value = ''; displayEl.innerHTML = ''; titleEl.textContent = ''; 
         stopAllAudio();
@@ -1176,23 +855,11 @@
           stopSquares();
         }
         currentId = '';
-        showInitialInput();
         return;
       }
-      
-      var found = posts[raw];
+      const found = posts.hasOwnProperty(raw) ? posts[raw] : null;
       if (found) {
         stopAllAudio();
-        
-        if (currentId === '20260703') {
-          clearAnswerEffects();
-          if (isBgWhite) {
-            document.body.classList.remove('bg-white');
-            isBgWhite = false;
-            stopSquares();
-          }
-          stopAnswerBgm();
-        }
         
         currentId = raw;
         titleEl.textContent = raw;
@@ -1207,13 +874,8 @@
           startBgTimer();
         }
         
-        if (found.isEmpty) { 
-          displayEl.innerHTML = '';
-          showInitialInput();
-          return; 
-        }
-        
-        var html = renderPost(found, raw);
+        if (found.isEmpty) { displayEl.innerHTML = ''; return; }
+        const html = renderPost(found, raw);
         if (html !== null && html !== '') {
           displayEl.innerHTML = html;
           if (found.hasAudio) bindAudioButton(found);
@@ -1222,16 +884,10 @@
             bindTestEntryButtons();
             if (isBgWhite) startSquares();
           }
-          if (found.isAnswerEntry) {
-            bindAnswerEntry();
-          }
           if (window.MathJax && MathJax.typesetPromise) {
             MathJax.typesetPromise().catch(function(err) {});
           }
-        } else { 
-          displayEl.innerHTML = '';
-          showInitialInput();
-        }
+        } else { displayEl.innerHTML = ''; }
       } else {
         inputEl.value = ''; displayEl.innerHTML = ''; titleEl.textContent = ''; 
         stopAllAudio();
@@ -1242,15 +898,14 @@
           stopSquares();
         }
         currentId = '';
-        showInitialInput();
       }
     }
 
     function refreshCurrentContent() {
-      if (currentId && posts[currentId]) {
-        var post = posts[currentId];
+      if (currentId && posts.hasOwnProperty(currentId)) {
+        const post = posts[currentId];
         if (post.isDynamic) {
-          var html = renderPost(post, currentId);
+          const html = renderPost(post, currentId);
           if (html !== null && html !== '') {
             displayEl.innerHTML = html;
             if (window.MathJax && MathJax.typesetPromise) {
@@ -1262,7 +917,7 @@
     }
 
     function loadRandom() {
-      var keys = Object.keys(posts);
+      const keys = Object.keys(posts);
       if (keys.length === 0) {
         inputEl.value = ''; displayEl.innerHTML = ''; titleEl.textContent = ''; 
         stopAllAudio();
@@ -1273,10 +928,9 @@
           stopSquares();
         }
         currentId = '';
-        showInitialInput();
         return;
       }
-      var randomKey = keys[Math.floor(Math.random() * keys.length)];
+      const randomKey = keys[Math.floor(Math.random() * keys.length)];
       inputEl.value = randomKey;
       loadContentById(randomKey);
     }
@@ -1286,11 +940,10 @@
       inputEl.value = '';
       titleEl.textContent = '';
       currentId = '';
-      showInitialInput();
 
       loadBtn.addEventListener('click', function(e) {
-        var val = inputEl.value;
-        var trimmed = val.trim();
+        const val = inputEl.value;
+        const trimmed = val.trim();
         if (trimmed === '') {
           inputEl.value = ''; displayEl.innerHTML = ''; titleEl.textContent = ''; 
           stopAllAudio();
@@ -1301,7 +954,6 @@
             stopSquares();
           }
           currentId = '';
-          showInitialInput();
           return;
         }
         loadContentById(val);
@@ -1312,8 +964,8 @@
       inputEl.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
           e.preventDefault();
-          var val = inputEl.value;
-          var trimmed = val.trim();
+          const val = inputEl.value;
+          const trimmed = val.trim();
           if (trimmed === '') {
             inputEl.value = ''; displayEl.innerHTML = ''; titleEl.textContent = ''; 
             stopAllAudio();
@@ -1324,7 +976,6 @@
               stopSquares();
             }
             currentId = '';
-            showInitialInput();
             return;
           }
           loadContentById(val);

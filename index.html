@@ -615,6 +615,7 @@
     const AUDIO_URL_YELLOW = 'button1.mp3';
     const AUDIO_URL_20260703_CORRECT = 'YES!!!.mp3';
     const AUDIO_URL_20260703_WRONG = 'expl.mp3';
+    const AUDIO_URL_20260703_BGM = 'Noooo.mp3';  // 答题界面背景音乐
     const CLOUD_IMAGE_URL = 'testcloud.png';
     const EFFECT_PAUSE_DURATION = 4000;
 
@@ -674,27 +675,48 @@
     let bgmResumeTimer = null;
     let isBgmPausedForEffect = false;
 
+    // 答题界面背景音乐
+    let answerBgmAudio = null;
+    let isAnswerBgmPlaying = false;
+
     // ============================================================
     // ★★★ 循环播放工具函数 ★★★
     // ============================================================
     function setupLoopPlayback(audioElement, loopEndOffset) {
       if (!audioElement) return;
       
-      // 等待音频元数据加载完成
+      let isLoopSetup = false;
+      
       audioElement.addEventListener('loadedmetadata', function() {
         const duration = audioElement.duration;
-        if (duration > loopEndOffset) {
+        if (duration > loopEndOffset && !isLoopSetup) {
+          isLoopSetup = true;
           const loopEnd = duration - loopEndOffset;
           audioElement.addEventListener('timeupdate', function onTimeUpdate() {
             if (audioElement.currentTime >= loopEnd) {
               audioElement.currentTime = 0;
               audioElement.play().catch(function(err) {
-                console.log('循环播放跳转失败:', err);
+                // 静默处理
               });
             }
           });
         }
       });
+      
+      // 如果音频已经加载完成
+      if (audioElement.readyState >= 1) {
+        const duration = audioElement.duration;
+        if (duration > loopEndOffset && !isLoopSetup) {
+          isLoopSetup = true;
+          const loopEnd = duration - loopEndOffset;
+          audioElement.addEventListener('timeupdate', function onTimeUpdate() {
+            if (audioElement.currentTime >= loopEnd) {
+              audioElement.currentTime = 0;
+              audioElement.play().catch(function(err) {});
+            }
+          });
+        }
+      }
     }
 
     function createLoopedAudio(url, loopEndOffset) {
@@ -742,6 +764,11 @@
       }
       clearTimeout(answerTimeout);
       answerTimeout = null;
+      if (answerBgmAudio) {
+        answerBgmAudio.pause();
+        answerBgmAudio = null;
+        isAnswerBgmPlaying = false;
+      }
     }
 
     // ----- 黑色小方块 -----
@@ -821,7 +848,6 @@
         bgmAudio = null; 
       }
       bgmAudio = createLoopedAudio(AUDIO_URL_TEST_BGM, LOOP_END_OFFSET);
-      bgmAudio.loop = false; // 使用自定义循环
       bgmAudio.play().catch(function(err) { 
         console.log('背景音乐播放失败:', err); 
       });
@@ -854,6 +880,27 @@
       pauseBgmForEffect();
       clearTimeout(bgmResumeTimer);
       bgmResumeTimer = setTimeout(function() { resumeBgmAfterEffect(); }, EFFECT_PAUSE_DURATION);
+    }
+
+    // ----- 答题界面背景音乐控制（带循环） -----
+    function startAnswerBgm() {
+      if (answerBgmAudio) {
+        answerBgmAudio.pause();
+        answerBgmAudio = null;
+      }
+      answerBgmAudio = createLoopedAudio(AUDIO_URL_20260703_BGM, LOOP_END_OFFSET);
+      answerBgmAudio.play().catch(function(err) { 
+        console.log('答题界面背景音乐播放失败:', err); 
+      });
+      isAnswerBgmPlaying = true;
+    }
+
+    function stopAnswerBgm() {
+      if (answerBgmAudio) {
+        answerBgmAudio.pause();
+        answerBgmAudio = null;
+        isAnswerBgmPlaying = false;
+      }
     }
 
     // ============================================================
@@ -897,12 +944,16 @@
       }
       
       isAnswerEffectActive = false;
+      stopAnswerBgm();
     }
 
     function triggerCorrectAnswer() {
       clearAnswerEffects();
       
       isAnswerEffectActive = true;
+      
+      // 停止答题背景音乐
+      stopAnswerBgm();
       
       // 使用循环播放的音频
       answerAudio = createLoopedAudio(AUDIO_URL_20260703_CORRECT, LOOP_END_OFFSET);
@@ -945,6 +996,9 @@
       
       isAnswerEffectActive = true;
       
+      // 停止答题背景音乐
+      stopAnswerBgm();
+      
       answerAudio = new Audio(AUDIO_URL_20260703_WRONG);
       answerAudio.play().catch(function(err) { console.log('错误答案音效播放失败:', err); });
       
@@ -955,7 +1009,7 @@
       
       const resultDiv = document.getElementById('answerResult');
       if (resultDiv) {
-        resultDiv.innerHTML = '<div class="wrong-answer-text">So that\'s all you could imagine???</div>';
+        resultDiv.innerHTML = '<div class="wrong-answer-text">So that\'s the best you could imagine???</div>';
       }
       
       clearTimeout(answerTimeout);
@@ -1007,6 +1061,8 @@
       }
       if (post.isAnswerEntry) {
         hideInitialInput();
+        // 启动答题背景音乐
+        startAnswerBgm();
         return `<div class="post-body">
           <div>Let $PS$, $PT$ be two lines tangent to parabola $y^{2}=2px$ at two distinct points $S$ and $T$ which intersect at point $P$. Given that $\\left|PS\\right|=3$, $\\left|PT\\right|=4$, $\\left|ST\\right|=5$, we can calculate that $\\left|p\\right|=$</div>
           <div id="answerDisplay"></div>
@@ -1153,6 +1209,7 @@
             isBgWhite = false;
             stopSquares();
           }
+          stopAnswerBgm();
         }
         
         currentId = raw;
